@@ -15,38 +15,33 @@ from .serializers import (
     )
 
 
-        
-
-
 class Comments(APIView):
-    #예외 : 존재 하지 않는 게시글에 댓글 작성 불가
-    #예외 : 존재 하지 않는 게시글에 대댓글 작성 불가
-    #에외 : 존재 하지 않는 댓글에 대댓글 작성 불가
+
     def get(self,request):
         all_comments=Comment.objects.filter(parent_comment=None)
         serializer=ReplySerializers(all_comments, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     def post(self, request):
-        
+        #예외 : 존재 하지 않는 게시글에 댓글 작성 불가
+        #예외 : 존재 하지 않는 게시글에 대댓글 작성 불가
+        #에외 : 존재 하지 않는 댓글에 대댓글 작성 불가
         content=request.data.get("content")
         post_id=request.data.get("post")
-        parent_comment_id = request.data.get("parent_comment", None)
-        #부모댓글 정보 
-        #부모댓글 정보가 전달 되지 않을 경우, None할당(=댓글)
+        parent_comment_id = request.data.get("parent_comment", None)#부모댓글 정보 #부모댓글 정보가 전달 되지 않을 경우, None할당(=댓글)
         
         try:
             post=Post.objects.get(id=post_id)
         except Post.DoesNotExist:
             return Response({"error":"해당 게시글이 존재하지 않습니다."}, status=status.HTTP_404_NOT_FOUND)
 
-        if parent_comment_id is not None:##대댓글
+        if parent_comment_id is not None:#대댓글
             try:
                 parent_comment = Comment.objects.get(id=parent_comment_id)
                 print(parent_comment)
             except Comment.DoesNotExist:
                 return Response({"error":"해당 댓글이 존재하지 않습니다."}, status=status.HTTP_404_NOT_FOUND)
-            print("대댓글 작성1")
+        
             comment=Comment.objects.create(
             content=content,
             user=request.user,
@@ -54,7 +49,6 @@ class Comments(APIView):
             parent_comment=parent_comment
             )
             serializer = ReplySerializers(comment)
-            print("대댓글 작성2")
             return Response(serializer.data, status=status.HTTP_201_CREATED)           
         else: #댓글
             print("댓글")
@@ -67,6 +61,7 @@ class Comments(APIView):
 
      
 class CommentDetail(APIView):# 댓글:  조회 생성, 수정, 삭제(ok)
+    
     def get_object(self, pk):
         try:
             return Comment.objects.get(pk=pk)
@@ -74,7 +69,6 @@ class CommentDetail(APIView):# 댓글:  조회 생성, 수정, 삭제(ok)
             raise NotFound
     
     def get(self, request, pk):
-        # if comment_id = 1이면 parent_comment_id가 1인 아이들도 가져 와야 함.~>filter()
         comment=self.get_object(pk=pk)
         serializer=ReplySerializers(
             comment,
@@ -97,7 +91,7 @@ class CommentDetail(APIView):# 댓글:  조회 생성, 수정, 삭제(ok)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request,pk):
-        #예외 : 댓글응 삭제할떄 post도 검사해야 함.
+        #댓글 삭제시 대댓글도 삭제 
         comment=self.get_object(pk)
         
         if comment.user!=request.user:
@@ -112,7 +106,7 @@ class Posts(APIView):
         serializer=PostListSerializers(all_posts, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
-    def post(self, request):
+    def post(self, request):#게시글 생성
         #예외 : image field, content field 둘 중 하나는 값이 있어야 함. 
         serializer=PostSerializers(data=request.data)
 
@@ -124,14 +118,12 @@ class Posts(APIView):
                 post,
                 context={'request': request}, 
             )
+            
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
-        
 
-    
-
-class PostDetail(APIView):
+class PostDetail(APIView):#게시글의 자세한 정보(+댓글 포함)
     def get_object(self, pk):
         try:
             return Post.objects.get(pk=pk)
@@ -140,16 +132,119 @@ class PostDetail(APIView):
 
     def get(self,request,pk):
         post=self.get_object(pk)
-        print(post.comments)
-        serializer = PostDetailSerializers(
+        all_comments = post.post_comments.filter(parent_comment=None)
+    
+        serializer=ReplySerializers(all_comments, many=True)
+        post_serializer = PostDetailSerializers(
             post,
             context={"request":request},
         )
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        response_data = post_serializer.data
+        response_data['comments'] = serializer.data
+        return Response(response_data, status=status.HTTP_200_OK)
     
-    
+    def post(self, request, pk):
+        #게시글에 댓글 또는 대댓글 등록 가능 
+        #예외 : 게시글이 없으면 댓글 대댓글 등록 불가 
+        post=self.get_object(pk)
+        post_id=request.data.get("post")
+        try:
+            post=Post.objects.get(id=post_id)
+        except Post.DoesNotExist:
+            return Response({"error":"해당 게시글이 존재하지 않습니다."}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer=CommentSerializers(data=request.data)
+        if serializer.is_valid():
+           serializer.save(post=post)
+           return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    """
+    def put(self, request, pk):
+        post=self.get_object(pk=pk)
+        if request.user==post.user: # 게시글 작성자 -> 게시글 수정 가능(ok)
+            serializer=PostSerializers(
+                post, 
+                data=request.data
+            )
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class PostComments(APIView):
+
+        else:#일반 사용자
+            comments = Comment.objects.filter(post=post, user=request.user)
+            serializer = ReplySerializers(comments, many=True, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+    def delete(self, request,pk):
+        post=self.get_object(pk)    
+        if request.user!=post.user:
+            raise PermissionDenied
+        post.delete()
+        return Response(status=status.HTTP_200_OK)
+"""
+class modifiedPostDetail(APIView):#[보류]
+    #게시글 수정,삭제
+    #예외 : 게시글 생성자는 게시글, 댓글,대댓글 모두 다 수정,삭제 가능
+    #예외 : 게시글 작성자가 아닌 일반 사용자는 본인이 등록한 글만 수정,삭제 가능
+
+    def get_object(self, pk):
+        try:
+            return Post.objects.get(pk=pk)
+        except Post.DoesNotExist:
+            raise NotFound
+        
+    def get(self, request, pk):
+        post=self.get_object(pk)
+        all_comments = post.post_comments.filter(parent_comment=None)
+    
+        serializer=ReplySerializers(all_comments, many=True)
+        post_serializer = PostDetailSerializers(
+            post,
+            context={"request":request},
+        )
+        response_data = post_serializer.data
+        response_data['comments'] = serializer.data
+        return Response(response_data, status=status.HTTP_200_OK)
+    
+    def put(self, request, pk):
+        post=self.get_object(pk=pk)
+        if request.user==post.user: # 게시글 작성자 -> 게시글 수정 가능(ok)
+            serializer=PostSerializers(
+                post, 
+                data=request.data
+            )
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+        else:#일반 사용자
+            comments = Comment.objects.filter(post=post, user=request.user)
+            serializer = ReplySerializers(comments, many=True, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request,pk):
+        post=self.get_object(pk)    
+        if request.user!=post.user:
+            raise PermissionDenied
+        post.delete()
+        return Response(status=status.HTTP_200_OK)
+
+        
+            
+
+
+class PostComments(APIView):#게시글에 등록 되어진 댓글, 대댓글
     def get_object(self, pk):
         try:
             return Post.objects.get(pk=pk)
@@ -163,3 +258,76 @@ class PostComments(APIView):
             many=True,
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
+    def post(self, request,pk):
+        #예외 : 존재 하지 않는 게시글에 댓글 작성 불가
+        #예외 : 존재 하지 않는 게시글에 대댓글 작성 불가
+        #에외 : 존재 하지 않는 댓글에 대댓글 작성 불가
+        content=request.data.get("content")
+        post_id=request.data.get("post")
+        parent_comment_id = request.data.get("parent_comment", None)#부모댓글 정보 #부모댓글 정보가 전달 되지 않을 경우, None할당(=댓글)
+        
+        try:
+            post=Post.objects.get(id=post_id)
+        except Post.DoesNotExist:
+            return Response({"error":"해당 게시글이 존재하지 않습니다."}, status=status.HTTP_404_NOT_FOUND)
+
+        if parent_comment_id is not None:#대댓글
+            try:
+                parent_comment = Comment.objects.get(id=parent_comment_id)
+                print(parent_comment)
+            except Comment.DoesNotExist:
+                return Response({"error":"해당 댓글이 존재하지 않습니다."}, status=status.HTTP_404_NOT_FOUND)
+        
+            comment=Comment.objects.create(
+            content=content,
+            user=request.user,
+            post=parent_comment.post,
+            parent_comment=parent_comment
+            )
+            serializer = ReplySerializers(comment)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)           
+        else: #댓글
+            print("댓글")
+            serializer=CommentSerializers(data=request.data)
+            if serializer.is_valid():
+                comment=serializer.save(post=post)
+                serializer=CommentSerializers(comment)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            
+class PostCommentsDetail(APIView):
+
+    def get_post(self, pk):
+        try: 
+            return Post.objects.get(pk=pk)
+        except Post.DoesNotExist:
+            raise NotFound    
+        
+    def get_comment(self, pk):
+        try:
+            return Comment.objects.get(pk=pk)
+        except Comment.DoesNotExist:
+            raise NotFound    
+        
+    def get(self, request, pk, comment_pk):
+        comment=self.get_comment(comment_pk)
+        
+        if comment.post==self.get_post(pk):
+            return Response(ReplySerializers(comment).data, status=status.HTTP_200_OK)
+        else:
+            raise NotFound
+        
+    def put(self, request, pk, comment_pk):
+        comment=self.get_comment(comment_pk)
+        serializer = ReplySerializers(
+            comment,
+            data=request.data,
+            partial=True,
+        )
+        if serializer.is_valid():
+            comment=serializer.save()
+            serializer=ReplySerializers(comment)
+            return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+        # return Response(status=status.HTTP_400_BAD_REQUEST)
+

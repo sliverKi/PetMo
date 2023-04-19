@@ -21,9 +21,7 @@ class CommentDetailSerializers(ModelSerializer):
         fields='__all__'
 
 
-
 class ReplySerializers(ModelSerializer):
-    # post=PostListSerializers()
     replies=serializers.SerializerMethodField()
     class Meta:
         model=Comment
