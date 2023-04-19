@@ -24,11 +24,11 @@ class Post(CommonModel):
         blank=True,
         null=True,
     )
-    comments=models.ForeignKey(
+    comments=models.ManyToManyField(
         "posts.Comment",
         blank=True,
         null=True,
-        on_delete=models.SET_NULL,
+        # on_delete=models.SET_NULL,
         related_name="posts",
     )
     pet_category=models.ManyToManyField(

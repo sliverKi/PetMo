@@ -3,5 +3,5 @@ from .models import Pet
 
 @admin.register(Pet)
 class PetAdmin(admin.ModelAdmin):
-    list_display=("species",)
-    list_display_links=("species",)
+    list_display=("id", "species",)
+    list_display_links=("id","species",)

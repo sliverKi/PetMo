@@ -8,6 +8,7 @@ from pets.serializers import PetsSerializers
 
 from .models import Post,Comment
 from .serializers import (
+    PostSerializers,
     PostListSerializers, PostDetailSerializers, 
     CommentSerializers, CommentDetailSerializers,
     ReplySerializers
@@ -17,7 +18,7 @@ from .serializers import (
         
 
 
-class Comments(APIView):#[post수정해야]
+class Comments(APIView):
     #예외 : 존재 하지 않는 게시글에 댓글 작성 불가
     #예외 : 존재 하지 않는 게시글에 대댓글 작성 불가
     #에외 : 존재 하지 않는 댓글에 대댓글 작성 불가
@@ -75,7 +76,7 @@ class CommentDetail(APIView):# 댓글:  조회 생성, 수정, 삭제(ok)
     def get(self, request, pk):
         # if comment_id = 1이면 parent_comment_id가 1인 아이들도 가져 와야 함.~>filter()
         comment=self.get_object(pk=pk)
-        serializer=CommentDetailSerializers(
+        serializer=ReplySerializers(
             comment,
             context={"request":request},                                    
         )
@@ -97,7 +98,7 @@ class CommentDetail(APIView):# 댓글:  조회 생성, 수정, 삭제(ok)
 
     def delete(self, request,pk):
         #예외 : 댓글응 삭제할떄 post도 검사해야 함.
-        comment=self.get_object(pk)#(11)
+        comment=self.get_object(pk)
         
         if comment.user!=request.user:
             raise PermissionDenied
@@ -111,6 +112,24 @@ class Posts(APIView):
         serializer=PostListSerializers(all_posts, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
+    def post(self, request):
+        #예외 : image field, content field 둘 중 하나는 값이 있어야 함. 
+        serializer=PostSerializers(data=request.data)
+
+        if serializer.is_valid():    
+            post=serializer.save(
+                user=request.user
+            )
+            serializer=PostListSerializers(
+                post,
+                context={'request': request}, 
+            )
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        
+
+    
 
 class PostDetail(APIView):
     def get_object(self, pk):
@@ -120,9 +139,8 @@ class PostDetail(APIView):
             raise NotFound
 
     def get(self,request,pk):
-        #댓글을 가져옴 (ok)
-        #~> 댓글에 대한 대댓글이 있는 경우도 가져와야 함.
         post=self.get_object(pk)
+        print(post.comments)
         serializer = PostDetailSerializers(
             post,
             context={"request":request},
@@ -131,3 +149,17 @@ class PostDetail(APIView):
     
     
 
+class PostComments(APIView):
+    def get_object(self, pk):
+        try:
+            return Post.objects.get(pk=pk)
+        except Post.DoesNotExist:
+            raise NotFound
+
+    def get(slef, request, pk):
+        comments=Comment.objects.filter(parent_comment=None)
+        serializer=ReplySerializers(
+            comments, 
+            many=True,
+        )
+        return Response(serializer.data, status=status.HTTP_200_OK)

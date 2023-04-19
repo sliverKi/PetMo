@@ -2,5 +2,5 @@ from django.contrib import admin
 from .models import Category
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display=("type",)
-    list_display_link=("type",)
+    list_display=("id","type",)
+    list_display_link=("id","type",)
