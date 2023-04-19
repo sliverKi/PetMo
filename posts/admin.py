@@ -9,6 +9,6 @@ class PostAdmin(admin.ModelAdmin):
 
 @admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):
-    list_display=("user","post","content",)
-    list_display_links=("user","post","content",)
+    list_display=("id","user","post","content",)
+    list_display_links=("id","user","post","content",)
     search_fields=("user",)

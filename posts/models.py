@@ -1,6 +1,13 @@
 from django.db import models
 from common.models import CommonModel
 
+
+# 해야 할일 -> 다중이미지,
+# 댓글 - 대댓글 porent_comment로 연결하기
+# 댓글 pageniation 최대 5개까지 보여주기
+# 대댓글 3개
+
+
 class Post(CommonModel):
     user=models.ForeignKey(
         "users.User",
@@ -12,13 +19,16 @@ class Post(CommonModel):
         blank=True,
         null=True,
     )
-    image=models.URLField(
+    image=models.URLField(#다중이미지를 위해 따로 빼야 하나..???
         max_length=500,
         blank=True,
         null=True,
     )
-    comments=models.ManyToManyField(
+    comments=models.ForeignKey(
         "posts.Comment",
+        blank=True,
+        null=True,
+        on_delete=models.SET_NULL,
         related_name="posts",
     )
     pet_category=models.ManyToManyField(
@@ -36,6 +46,7 @@ class Post(CommonModel):
         return f"{self.user} - {self.content}"
     
 class Comment(CommonModel):
+    
     user=models.ForeignKey(
         "users.User",
         on_delete=models.CASCADE
@@ -45,15 +56,18 @@ class Comment(CommonModel):
         on_delete=models.CASCADE,
         blank=True,
         null=True,
+        related_name="post_comments",
     )
-    content=models.CharField(
+    content=models.CharField(#댓글 작성
         max_length=150,
         blank=True,
         null=True,
     )
-    parent_comment=models.ForeignKey(
+    parent_comment=models.ForeignKey(#parent_comment에 값이 있으면 대댓글, 값이 없으면 댓글 
         "self",
         on_delete=models.CASCADE,
         blank=True,
-        null=True
-    )#parent_comment에 값이 있으면 대댓글, 값이 없으면 댓글 
+        null=True,
+        related_name="replies",
+    )
+    
