@@ -9,6 +9,10 @@ readme = "README.md"
 python = "^3.11"
 django = "^4.2"
 djangorestframework = "^3.14.0"
+djangorestframework-simplejwt = "^5.2.2"
+django-allauth = "^0.54.0"
+dj-rest-auth = "^3.0.0"
+django-cors-headers = "^3.14.0"
 
 
 [build-system]

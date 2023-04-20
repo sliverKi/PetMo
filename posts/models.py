@@ -7,7 +7,6 @@ from common.models import CommonModel
 # 댓글 pageniation 최대 5개까지 보여주기
 # 대댓글 3개
 
-
 class Post(CommonModel):
     user=models.ForeignKey(
         "users.User",

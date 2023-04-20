@@ -8,5 +8,5 @@ urlpatterns = [
     path("api/v1/pets/", include("pets.urls")),
     path("api/v1/posts/", include("posts.urls")),
     path("api/v1/categories/", include("categories.urls")),
-    # path("api/v1/pets/", include("pets.urls")),
+    path("api/v1/auths/", include("auths.urls")),
 ]
