@@ -158,7 +158,7 @@ class PostDetail(APIView):#게시글의 자세한 정보(+댓글 포함)
            serializer.save(post=post)
            return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    """
+    
     def put(self, request, pk):
         post=self.get_object(pk=pk)
         if request.user==post.user: # 게시글 작성자 -> 게시글 수정 가능(ok)
@@ -170,24 +170,15 @@ class PostDetail(APIView):#게시글의 자세한 정보(+댓글 포함)
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            raise PermissionDenied("게시글 수정 권한이 없습니다.")
 
-
-        else:#일반 사용자
-            comments = Comment.objects.filter(post=post, user=request.user)
-            serializer = ReplySerializers(comments, many=True, data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-    def delete(self, request,pk):
+    def delete(self, request,pk):#게시글 삭제
         post=self.get_object(pk)    
         if request.user!=post.user:
-            raise PermissionDenied
+            raise PermissionDenied("게시글 삭제 권한이 없습니다.")
         post.delete()
         return Response(status=status.HTTP_200_OK)
-"""
 class modifiedPostDetail(APIView):#[보류]
     #게시글 수정,삭제
     #예외 : 게시글 생성자는 게시글, 댓글,대댓글 모두 다 수정,삭제 가능
@@ -316,8 +307,12 @@ class PostCommentsDetail(APIView):
         else:
             raise NotFound
         
-    def put(self, request, pk, comment_pk):
+    def put(self, request, pk, comment_pk):#댓글 or 대댓글 수정
         comment=self.get_comment(comment_pk)
+        
+        if request.user !=comment.user:
+            raise PermissionDenied("수정 권한이 없습니다.")
+        
         serializer = ReplySerializers(
             comment,
             data=request.data,
@@ -329,5 +324,10 @@ class PostCommentsDetail(APIView):
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-        # return Response(status=status.HTTP_400_BAD_REQUEST)
 
+    def delete(self, request,pk, comment_pk):#댓글 삭제
+        comment=self.get_comment(comment_pk)
+        if request.user!=comment.user:
+            raise PermissionDenied("삭제 권한이 없습니다.")
+        comment.delete()
+        return Response(status=status.HTTP_200_OK)

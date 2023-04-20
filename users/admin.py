@@ -24,6 +24,7 @@ class MyUserAdmin(UserAdmin):
             None,
             {
                 "fields": (
+                    
                     "email",
                     "username",
                     "password",
@@ -56,6 +57,7 @@ class MyUserAdmin(UserAdmin):
         ),
     )
     list_display = (
+        "pk",
         "email",
         "username",
         "hasPet",

@@ -23,6 +23,7 @@ class CommentDetailSerializers(ModelSerializer):
 
 class ReplySerializers(ModelSerializer):
     replies=serializers.SerializerMethodField()
+    
     class Meta:
         model=Comment
         fields=(
