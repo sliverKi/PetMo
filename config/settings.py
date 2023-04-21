@@ -93,9 +93,9 @@ REST_FRAMEWORK={
     )
 }
 SIMPLE_JWT={
-    'ACCESS_TOCKEN_LIFETIME':timedelta(minutes=60),#유효시간 설정 
+    'ACCESS_TOCKEN_LIFETIME':timedelta(minutes=5),#유효시간 설정 
     'REFRESH_TOCKEN_LIFETIME':timedelta(days=1),#유효시간 설정 
-    'ROTATE_REFRESH_TOCKEN':False, #token재발급 관련 설정
+    'ROTATE_REFRESH_TOCKEN':True, #token재발급 관련 설정
     'BLACKLIST_AFTER_ROTATION':True,#token 무효화
 
 

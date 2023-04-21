@@ -6,7 +6,7 @@ from pets.serializers import PetsSerializers
 
 
 
-class UserSerializer(serializers.ModelSerializer):
+class UserSerializers(serializers.ModelSerializer):
     class Meta:
         model=User
         fields="__all__"
