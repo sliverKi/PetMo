@@ -73,21 +73,10 @@ class Address(models.Model):
         related_name="user_address"
     )
     addressName=models.CharField(max_length=255,)
-    reigonDepth1=models.CharField(max_length=255,)
-    reigonDepth2=models.CharField(max_length=255,)
-    
-    latitiude=models.DecimalField(
-        max_digits=9, 
-        decimal_places=6,
-        null=True,
-        blank=True,
-        )
-    longitude=models.DecimalField(
-        max_digits=9, 
-        decimal_places=6,
-        null=True,
-        blank=True,
-        )
+
+    regionDepth1=models.CharField(max_length=255,default="")
+    regionDepth2=models.CharField(max_length=255,default="")
+    regionDepth3=models.CharField(max_length=255,default="")
     
     def __str__(self) -> str:
         return self.addressName 

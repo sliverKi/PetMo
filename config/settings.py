@@ -97,8 +97,6 @@ SIMPLE_JWT={
     'REFRESH_TOCKEN_LIFETIME':timedelta(days=1),#유효시간 설정 
     'ROTATE_REFRESH_TOCKEN':True, #token재발급 관련 설정
     'BLACKLIST_AFTER_ROTATION':True,#token 무효화
-
-
     
 }
 # Password validation
@@ -142,3 +140,6 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = "users.User"
+
+GOOGLE_MAPS_API_KEY = 'AIzaSyAjt40jPFYcHHr48qBY6rIuNPh8HjU48nw'
+KAKAO_API_KEY='edf91b087910540822410cf18d6886dc'

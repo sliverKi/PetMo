@@ -33,6 +33,7 @@ class ReplySerializers(ModelSerializer):
             "user",
             "content",
             "created_at",
+            "updated_at",
             "replies",
         )
     
@@ -79,9 +80,9 @@ class PostListSerializers(ModelSerializer):#간략한 정보만을 보여줌
         )
 
 class PostDetailSerializers(ModelSerializer):
-    category=BoardSerializers()
-    pet_category=PetsSerializers(many=True)
     user=TinyUserSerializers()
+    pet_category=PetsSerializers(many=True)
+    category=BoardSerializers()
     comments=ReplySerializers(many=True)
     
     class Meta:

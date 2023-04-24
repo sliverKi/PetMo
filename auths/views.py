@@ -38,6 +38,7 @@ class LogIn(APIView):
                 "access": str(refresh.access_token),#access token 생성
                 "user_id":user.id,
                 "user_email":user.email,
+                "username":user.username,
             } 
             return Response(token, status=status.HTTP_200_OK)
             #return Response(token, status=status.HTTP_200_OK)::front 전달
@@ -72,18 +73,23 @@ class TokenBlack(APIView):
         else:
             return Response({'error': 'Refresh token is not provided.'}, status=status.HTTP_400_BAD_REQUEST)
        
-
+# {"email":"momo@gmail.com", "password":"momo"}
 
 class LogOut(APIView):
     def post(self, request):
-        token=request.data.get("token")
+        refresh_token=request.data.get("refresh")
+        print("refresh_token: ", refresh_token)
         try:
-            AccessToken(token).blacklist()#token무효화 
+            print(request.auth)
+            token = RefreshToken(refresh_token)
+            print("token: ", token)
+            print(dir(token))
+            token.blacklist()#token을 무효화 주석해제하면 로그아웃이 안됌,, =>>> 왜지???
             logout(request)
             return Response({"success":"Success LogOut!"}, status=status.HTTP_200_OK)
-        except:
-            return Response({"error":"LogOut Failed..."}, status=status.HTTP_406_NOT_ACCEPTABLE)
-        
+        except Exception as e:
+            print(e)
+            return Response({"error":"LogOut Failed..."}, status=status.HTTP_406_NOT_ACCEPTABLE)        
 class Register(APIView):
     def post(self, request, format=None):
         serializer=UserSerializers(data=request.data)

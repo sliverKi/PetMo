@@ -71,8 +71,8 @@ class MyUserAdmin(UserAdmin):
 
 @admin.register(Address)
 class AddressAdmin(admin.ModelAdmin):
-    list_display=('pk', 'addressName', 'reigonDepth1', 'reigonDepth2')
-    list_display_links=('pk', 'addressName', 'reigonDepth1', 'reigonDepth2')
+    list_display=('pk', 'user', 'addressName', 'regionDepth1', 'regionDepth2', 'regionDepth3')
+    list_display_links=('pk', 'user', 'addressName', 'regionDepth1', 'regionDepth2', 'regionDepth3')
 
 
 
