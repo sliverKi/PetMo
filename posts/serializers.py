@@ -6,14 +6,33 @@ from rest_framework.response import Response
 from categories.serializers import BoardSerializers
 from pets.serializers import PetsSerializers
 from users.serializers import TinyUserSerializers
-from .models import Post,Comment
+from .models import Post,Comment, Image
+from categories.models import Category
+from pets.models import Pet
 import sys
 sys.setrecursionlimit(100000)
+class ImageSerializers(ModelSerializer):
+    class Meta:
+        model=Image
+        fields=(
+            "id",
+            "image",
+        )
+
+
 class CommentSerializers(ModelSerializer):
-    # replies=serializers.SerializerMethodField()
     class Meta:
         model=Comment
-        fields="__all__"     
+        fields=( 
+            "id",
+            "parent_comment",
+            "post",  
+            "user",
+            "content",
+            "created_at",
+            "updated_at",
+        ) 
+
 
 class CommentDetailSerializers(ModelSerializer):
     class Meta:
@@ -23,7 +42,6 @@ class CommentDetailSerializers(ModelSerializer):
 
 class ReplySerializers(ModelSerializer):
     replies=serializers.SerializerMethodField()
-    
     class Meta:
         model=Comment
         fields=(
@@ -45,6 +63,7 @@ class ReplySerializers(ModelSerializer):
         return serializer.data
 class PostSerializers(ModelSerializer):
     user=TinyUserSerializers(read_only=True)
+    # image=ImageSerializers(many=True)
     class Meta:
         model=Post
         fields=(
@@ -66,6 +85,8 @@ class PostListSerializers(ModelSerializer):#간략한 정보만을 보여줌
     user=TinyUserSerializers(read_only=True)
     pet_category=PetsSerializers(many=True)
     category=BoardSerializers()
+    image=ImageSerializers(many=True)
+
     class Meta:
         model=Post
         fields=(
@@ -74,16 +95,16 @@ class PostListSerializers(ModelSerializer):#간략한 정보만을 보여줌
             "pet_category",
             "user",
             "content",
+            "image",
             "created_at", 
             "updated_at",
-            "image",
         )
 
 class PostDetailSerializers(ModelSerializer):
     user=TinyUserSerializers()
     pet_category=PetsSerializers(many=True)
     category=BoardSerializers()
-    comments=ReplySerializers(many=True)
+    image=ImageSerializers(many=True)
     
     class Meta:
         model=Post
@@ -93,10 +114,46 @@ class PostDetailSerializers(ModelSerializer):
             "pet_category",
             "user", 
             "content",
-            "comments",
-            "created_at",
-            "updated_at",
-            "content",
             "image",
+            "created_at",
+            "updated_at",    
         )
+
+
+    #{ update()-put()
+    #"content": "test",
+    #"category": {"type": "Free"},
+    #"pet_category": [{"species": "cat"}, {"species":"dog"}, {"species":"fish"}]
+    #}
+    
+    def update(self, instance, validated_data):
+        
+        instance.pet_category.clear()
+        pet_category_data = validated_data.pop("pet_category", None)
+        image_data = validated_data.pop("image", None)
+        category_data = validated_data.pop("category", None)
+        # print("q: ", category_data)
+        if category_data is not None:
+            category_instance = Category.objects.filter(type=category_data.get("type")).first()
+            # print("a: ", category_instance)
+            if category_instance is None:
+                raise serializers.ValidationError({"category": "Invalid category"})
+            instance.category = category_instance
+
+        # Update the remaining fields
+        instance = super().update(instance, validated_data)
+
+        # Update the many-to-many fields
+        if pet_category_data is not None:
+            for pet_category in pet_category_data:
+                species = pet_category.get("species")
+                if species:
+                    pet_category, _ = Pet.objects.get_or_create(species=species)
+                    instance.pet_category.add(pet_category)
+        if image_data is not None:
+            for i, image in enumerate(image_data):
+                Image.objects.update_or_create(id=image.get("id"), defaults={"image": image.get("image"), "order": i, "post": instance})
+
+        instance.save()
+        return instance
 

@@ -132,46 +132,34 @@ class PostDetail(APIView):#게시글의 자세한 정보(+댓글 포함)
 
     def get(self,request,pk):
         post=self.get_object(pk)
-        all_comments = post.post_comments.filter(parent_comment=None)
-    
-        serializer=ReplySerializers(all_comments, many=True)
-        post_serializer = PostDetailSerializers(
+        serializer = PostDetailSerializers(
             post,
             context={"request":request},
         )
-        response_data = post_serializer.data
-        response_data['comments'] = serializer.data
-        return Response(response_data, status=status.HTTP_200_OK)
-    
-    def post(self, request, pk):
-        #게시글에 댓글 또는 대댓글 등록 가능 
-        #예외 : 게시글이 없으면 댓글 대댓글 등록 불가 
-        post=self.get_object(pk)
-        post_id=request.data.get("post")
-        try:
-            post=Post.objects.get(id=post_id)
-        except Post.DoesNotExist:
-            return Response({"error":"해당 게시글이 존재하지 않습니다."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(serializer.data, status=status.HTTP_200_OK)
         
-        serializer=CommentSerializers(data=request.data)
-        if serializer.is_valid():
-           serializer.save(post=post)
-           return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
     def put(self, request, pk):
         post=self.get_object(pk=pk)
-        if request.user==post.user: # 게시글 작성자 -> 게시글 수정 가능(ok)
-            serializer=PostSerializers(
-                post, 
-                data=request.data
-            )
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        if post.user != request.user:
+            raise PermissionDenied
+        
+        serializer=PostDetailSerializers(
+            post, 
+            data=request.data,
+            partial=True
+        )
+        if serializer.is_valid():
+            try:
+                post=serializer.save(
+                    # image=request.data["image"],
+                    category=request.data.get("category")
+                )
+            except: 
+                post = serializer.save(category=request.data.get("category"))    
+            serializer=PostDetailSerializers(post)
+            return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         else:
-            raise PermissionDenied("게시글 수정 권한이 없습니다.")
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request,pk):#게시글 삭제
         post=self.get_object(pk)    
@@ -179,61 +167,6 @@ class PostDetail(APIView):#게시글의 자세한 정보(+댓글 포함)
             raise PermissionDenied("게시글 삭제 권한이 없습니다.")
         post.delete()
         return Response(status=status.HTTP_200_OK)
-class modifiedPostDetail(APIView):#[보류]
-    #게시글 수정,삭제
-    #예외 : 게시글 생성자는 게시글, 댓글,대댓글 모두 다 수정,삭제 가능
-    #예외 : 게시글 작성자가 아닌 일반 사용자는 본인이 등록한 글만 수정,삭제 가능
-
-    def get_object(self, pk):
-        try:
-            return Post.objects.get(pk=pk)
-        except Post.DoesNotExist:
-            raise NotFound
-        
-    def get(self, request, pk):
-        post=self.get_object(pk)
-        all_comments = post.post_comments.filter(parent_comment=None)
-    
-        serializer=ReplySerializers(all_comments, many=True)
-        post_serializer = PostDetailSerializers(
-            post,
-            context={"request":request},
-        )
-        response_data = post_serializer.data
-        response_data['comments'] = serializer.data
-        return Response(response_data, status=status.HTTP_200_OK)
-    
-    def put(self, request, pk):
-        post=self.get_object(pk=pk)
-        if request.user==post.user: # 게시글 작성자 -> 게시글 수정 가능(ok)
-            serializer=PostSerializers(
-                post, 
-                data=request.data
-            )
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-        else:#일반 사용자
-            comments = Comment.objects.filter(post=post, user=request.user)
-            serializer = ReplySerializers(comments, many=True, data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def delete(self, request,pk):
-        post=self.get_object(pk)    
-        if request.user!=post.user:
-            raise PermissionDenied
-        post.delete()
-        return Response(status=status.HTTP_200_OK)
-
-        
-            
-
 
 class PostComments(APIView):#게시글에 등록 되어진 댓글, 대댓글
     def get_object(self, pk):

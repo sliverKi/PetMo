@@ -18,7 +18,7 @@ class Post(CommonModel):
         blank=True,
         null=True,
     )
-    image=models.URLField(#다중이미지를 위해 따로 빼야 하나..???
+    image=models.URLField(
         max_length=500,
         blank=True,
         null=True,
@@ -44,6 +44,14 @@ class Post(CommonModel):
     def __str__(self):
         return f"{self.user} - {self.content}"
     
+class Image(CommonModel):
+    post=models.ForeignKey(
+        "posts.Post",
+        on_delete=models.CASCADE,
+        related_name="images"
+    )
+    image=models.ImageField(upload_to='post_images/')
+
 class Comment(CommonModel):
     
     user=models.ForeignKey(

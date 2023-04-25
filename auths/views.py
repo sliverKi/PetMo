@@ -13,6 +13,7 @@ from rest_framework.exceptions import NotFound, ParseError
 from users.models import User
 from users.serializers import UserSerializers
 
+import requests
 class LogIn(APIView):
     def post(self, request, format=None):
         email=request.data.get('email')
@@ -101,3 +102,50 @@ class Register(APIView):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+class KakaoLogin(APIView):
+    def post(self, request):
+        try:
+            code = request.data.get("code")
+            access_token = (
+                requests.post(
+                    "https://kauth.kakao.com/oauth/token",
+                    headers={
+                        "Content-Type": "application/x-www-form-urlencoded",
+                    },
+                    data={
+                        "grant_type": "authorization_code",
+                        "client_id": "da7b6b984fe482fd404d22bff8e2f803",
+                        "redirect_uri": "http://127.0.0.1:3000/social/kakao",
+                        "code": code,
+                    },
+                )
+                .json()
+                .get("access_token")
+            )
+            user_data = requests.get(
+                "https://kapi.kakao.com/v2/user/me",
+                headers={
+                    "Authorization": f"Bearer {access_token}",
+                    "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+                },
+            ).json()
+            kakao_account = user_data.get("kakao_account")
+            profile = kakao_account.get("profile")
+            try:
+                user = User.objects.get(email=kakao_account.get("email"))
+                login(request, user)
+                return Response(status=200)
+            except User.DoesNotExist:
+                user = User.objects.create(
+                    email=kakao_account.get("email"),
+                    username=profile.get("nickname"),
+                    name=profile.get("nickname"),
+                    avatar=profile.get("profile_image_url"),
+                )
+            user.set_unusable_password()
+            user.save()
+            login(request, user)
+            return Response(status=200)
+        except Exception:
+            return Response(status=400)

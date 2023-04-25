@@ -7,3 +7,4 @@ class BoardSerializers(ModelSerializer):
     class Meta:
         model = Category
         fields = ("type",)
+        read_only=False

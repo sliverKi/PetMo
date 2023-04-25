@@ -8,7 +8,7 @@ from rest_framework.exceptions import ParseError, NotFound
 import requests
 from pets.models import Pet
 from posts.models import Post, Comment
-from posts.serializers import PostListSerializers, ReplySerializers
+from posts.serializers import PostListSerializers, CommentSerializers, ReplySerializers
 from .models import User
 class My(APIView):  
 
@@ -17,9 +17,13 @@ class My(APIView):
 
         user_posts=Post.objects.filter(user=user)#user가 작성한 게시글
         user_post_serialized = PostListSerializers(user_posts, many=True).data
-
-        user_comments=Comment.objects.filter(user=user)#user가 작성한 댓글 대댓글
-        user_comments_serialized=ReplySerializers(user_comments, many=True).data
+        user_comments=Comment.objects.filter(user=user).select_related('post')#user가 작성한 댓글 
+        
+        user_comments_serialized=[]
+        for comment in user_comments:
+            serialized_comment=CommentSerializers(comment).data
+            serialized_comment['post_content']=comment.post.content   
+            user_comments_serialized.append(serialized_comment)
         response_data = {
             "user": TinyUserSerializers(user).data,
             "user_posts": user_post_serialized,
