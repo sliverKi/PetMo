@@ -125,7 +125,7 @@ class PostDetailSerializers(ModelSerializer):
     #"category": {"type": "Free"},
     #"pet_category": [{"species": "cat"}, {"species":"dog"}, {"species":"fish"}]
     #}
-    
+    # image : 다중 이미지 만들기. 
     def update(self, instance, validated_data):
         
         instance.pet_category.clear()
