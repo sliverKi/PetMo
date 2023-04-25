@@ -10,27 +10,32 @@ from pets.models import Pet
 from posts.models import Post, Comment
 from posts.serializers import PostListSerializers, CommentSerializers, ReplySerializers
 from .models import User
-class My(APIView):  
+class MyPost(APIView):  
 
     def get(self, request):
         user = request.user
 
         user_posts=Post.objects.filter(user=user)#user가 작성한 게시글
         user_post_serialized = PostListSerializers(user_posts, many=True).data
-        user_comments=Comment.objects.filter(user=user).select_related('post')#user가 작성한 댓글 
         
+        response_data = {
+            "user": TinyUserSerializers(user).data,
+            "user_posts": user_post_serialized,
+        }
+        return Response(response_data, status=status.HTTP_200_OK)
+class MyComment(APIView):
+    def get(self, request):
+        user=request.user
+        user_comments=Comment.objects.filter(user=user).select_related('post')#user가 작성한 댓글 
         user_comments_serialized=[]
         for comment in user_comments:
             serialized_comment=CommentSerializers(comment).data
             serialized_comment['post_content']=comment.post.content   
             user_comments_serialized.append(serialized_comment)
         response_data = {
-            "user": TinyUserSerializers(user).data,
-            "user_posts": user_post_serialized,
             "user_comments": user_comments_serialized,
         }
         return Response(response_data, status=status.HTTP_200_OK)
-    
 class EditMe(APIView):
 
     def get(self, request):
@@ -115,7 +120,7 @@ class getIP(APIView):#ip기반 현위치 탐색
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({"error": "Failed to Save Address Data"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
+    
 class getQuery(APIView):#검색어 입력 기반 동네 검색
     def get(self, request):
         
@@ -143,4 +148,18 @@ class getQuery(APIView):#검색어 입력 기반 동네 검색
         
         return Response(datas)
 
+#동네 재 설정 todo 
+class ReSet(APIView):
+    def get_object(self, pk):
+        try:
+            return User.objects.get(pk=pk)
+        except User.DoesNotExist:
+            raise NotFound
+
+    def get(self, request):
+        #로그인한 유저의 현재 동네 설정 정보 가져오기 
+        pass
+    def put(self, request):
+        #동네 재 탐색 ~> 재 설정 
+        pass
 

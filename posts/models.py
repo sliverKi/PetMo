@@ -18,10 +18,12 @@ class Post(CommonModel):
         blank=True,
         null=True,
     )
-    image=models.URLField(
+    image=models.ManyToManyField(
+        "posts.Image",
         max_length=500,
         blank=True,
         null=True,
+        related_name="posts_images"
     )
     comments=models.ManyToManyField(
         "posts.Comment",
@@ -48,10 +50,11 @@ class Image(CommonModel):
     post=models.ForeignKey(
         "posts.Post",
         on_delete=models.CASCADE,
+        blank=True,
+        null=True,
         related_name="images"
     )
-    image=models.ImageField(upload_to='post_images/')
-
+    image=models.ImageField(upload_to="post_images", blank=True)
 class Comment(CommonModel):
     
     user=models.ForeignKey(

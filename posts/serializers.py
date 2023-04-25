@@ -63,7 +63,7 @@ class ReplySerializers(ModelSerializer):
         return serializer.data
 class PostSerializers(ModelSerializer):
     user=TinyUserSerializers(read_only=True)
-    # image=ImageSerializers(many=True)
+    image=ImageSerializers(many=True)
     class Meta:
         model=Post
         fields=(
@@ -81,11 +81,12 @@ class PostSerializers(ModelSerializer):
         if content is None and image is None:
             raise ParseError({"error": "내용을 입력해주세요."})
         return data
+
 class PostListSerializers(ModelSerializer):#간략한 정보만을 보여줌
     user=TinyUserSerializers(read_only=True)
     pet_category=PetsSerializers(many=True)
     category=BoardSerializers()
-    image=ImageSerializers(many=True)
+    image=ImageSerializers(many=True)#첫번째 이미지만 보여줌 
 
     class Meta:
         model=Post
@@ -99,8 +100,13 @@ class PostListSerializers(ModelSerializer):#간략한 정보만을 보여줌
             "created_at", 
             "updated_at",
         )
+    def validate_image(self, data):
+        print(1)
+        image= data.get('image', None)
+        if len(image)>2:
+            return image[0]
 
-class PostDetailSerializers(ModelSerializer):
+class PostDetailSerializers(ModelSerializer):#image 나열
     user=TinyUserSerializers()
     pet_category=PetsSerializers(many=True)
     category=BoardSerializers()

@@ -101,13 +101,13 @@ class CommentDetail(APIView):# 댓글:  조회 생성, 수정, 삭제(ok)
 
                      
 class Posts(APIView):
+    
     def get(self, request):
         all_posts=Post.objects.all()
         serializer=PostListSerializers(all_posts, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     def post(self, request):#게시글 생성
-        #예외 : image field, content field 둘 중 하나는 값이 있어야 함. 
         serializer=PostSerializers(data=request.data)
 
         if serializer.is_valid():    

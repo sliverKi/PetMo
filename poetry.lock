@@ -316,6 +316,21 @@ files = [
 Django = ">=3.2"
 
 [[package]]
+name = "django-multiupload"
+version = "0.6.1"
+description = "Dead simple drop-in multi file upload field for django forms using HTML5's multiple attribute."
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "django-multiupload-0.6.1.tar.gz", hash = "sha256:85ee24db8fdb1082494daea312fed5649ecab07326f8502ccf58ca6ab2e3fe5d"},
+    {file = "django_multiupload-0.6.1-py3-none-any.whl", hash = "sha256:ac968fdce7f2640531acbcc003bf1d41ab122bf72a6972ef02940885f0cea2d5"},
+]
+
+[package.dependencies]
+django = "*"
+
+[[package]]
 name = "djangorestframework"
 version = "3.14.0"
 description = "Web APIs for Django, made easy."
@@ -614,4 +629,4 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "2b2b54623dba9a691b8ab05519cfa58ddaee87343a5d7d8ba92bc6cad7e82eab"
+content-hash = "879bf18ef030da137ff22055c95cb2ac7cb6ecf5be0ecb871ed865d817392bd5"
