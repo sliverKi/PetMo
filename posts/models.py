@@ -51,6 +51,7 @@ class Image(CommonModel):
         related_name="images"
     )
     image=models.ImageField(upload_to='post_images/')
+
 class Comment(CommonModel):
     
     user=models.ForeignKey(
