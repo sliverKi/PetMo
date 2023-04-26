@@ -3,7 +3,6 @@ from common.models import CommonModel
 
 
 # 해야 할일 -> 다중이미지,
-# 댓글 - 대댓글 porent_comment로 연결하기
 # 댓글 pageniation 최대 5개까지 보여주기
 # 대댓글 3개
 
@@ -17,13 +16,6 @@ class Post(CommonModel):
         max_length=255,
         blank=True,
         null=True,
-    )
-    image=models.ManyToManyField(
-        "posts.Image",
-        max_length=500,
-        blank=True,
-        null=True,
-        related_name="posts_images"
     )
     comments=models.ManyToManyField(
         "posts.Comment",
@@ -54,9 +46,13 @@ class Image(CommonModel):
         null=True,
         related_name="images"
     )
-    image=models.ImageField(upload_to="post_images", blank=True)
+    img_path=models.ImageField(
+        upload_to="post_images", 
+        blank=True, 
+        null=True)
+    #이미지 파일의 저장 경로를 받음
+    #이미지파일의 주소 경로가 아님.
 class Comment(CommonModel):
-    
     user=models.ForeignKey(
         "users.User",
         on_delete=models.CASCADE

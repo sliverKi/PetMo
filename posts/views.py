@@ -1,7 +1,11 @@
 from django.shortcuts import render
+from django.http import QueryDict
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.authentication import SessionAuthentication
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.exceptions import NotFound, PermissionDenied, ParseError
 from categories.serializers import BoardSerializers
 from pets.serializers import PetsSerializers
@@ -11,7 +15,7 @@ from .serializers import (
     PostSerializers,
     PostListSerializers, PostDetailSerializers, 
     CommentSerializers, CommentDetailSerializers,
-    ReplySerializers
+    ReplySerializers, ImageSerializers
     )
 
 
@@ -57,9 +61,6 @@ class Comments(APIView):
                 comment=serializer.save(post=post)
                 serializer=CommentSerializers(comment)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-            
-
-     
 class CommentDetail(APIView):# 댓글:  조회 생성, 수정, 삭제(ok)
     
     def get_object(self, pk):
@@ -99,29 +100,30 @@ class CommentDetail(APIView):# 댓글:  조회 생성, 수정, 삭제(ok)
         comment.delete()
         return Response(status=status.HTTP_200_OK)
 
-                     
 class Posts(APIView):
-    
+    # authentication_classes=[SessionAuthentication]
+    # permission_classes=[IsAuthenticated]
+    parser_classes = (MultiPartParser, FormParser)
     def get(self, request):
         all_posts=Post.objects.all()
         serializer=PostListSerializers(all_posts, many=True)
+        #등록된 게시글을 불러온다. 만약, 등록된 게시글에 이미지가 1장이상인 경우 가장 처음의 이미지만 보여준다, 만약 등록된 이미지가 없는 경우 빈 리스트로 보여준다.
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     def post(self, request):#게시글 생성
-        serializer=PostSerializers(data=request.data)
+        
+        serializer=PostSerializers(data=request.data,)
 
         if serializer.is_valid():    
             post=serializer.save(
-                user=request.user
+                user=request.user,
             )
             serializer=PostListSerializers(
                 post,
                 context={'request': request}, 
             )
-            
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
 
 class PostDetail(APIView):#게시글의 자세한 정보(+댓글 포함)
     def get_object(self, pk):

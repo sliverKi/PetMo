@@ -12,6 +12,6 @@ class ImageInline(admin.StackedInline):
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
     inlines=(ImageInline,)
-    list_display=("category", "user", "content")
+    list_display=("category", "user", "content","created_at")
     list_display_links=("user", "content")
     search_fields=("category","pet_category", "user",)

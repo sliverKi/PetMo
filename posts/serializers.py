@@ -11,13 +11,6 @@ from categories.models import Category
 from pets.models import Pet
 import sys
 sys.setrecursionlimit(100000)
-class ImageSerializers(ModelSerializer):
-    class Meta:
-        model=Image
-        fields=(
-            "id",
-            "image",
-        )
 
 
 class CommentSerializers(ModelSerializer):
@@ -32,14 +25,10 @@ class CommentSerializers(ModelSerializer):
             "created_at",
             "updated_at",
         ) 
-
-
 class CommentDetailSerializers(ModelSerializer):
     class Meta:
         model=Comment
         fields='__all__'
-
-
 class ReplySerializers(ModelSerializer):
     replies=serializers.SerializerMethodField()
     class Meta:
@@ -54,39 +43,69 @@ class ReplySerializers(ModelSerializer):
             "updated_at",
             "replies",
         )
-    
     def get_replies(self, obj):
         replies=Comment.objects.filter(parent_comment=obj.id).order_by('created_at')
         if not replies.exists():
             return None
         serializer=ReplySerializers(replies, many=True,)
         return serializer.data
+class ImageSerializers(ModelSerializer):
+    # image=serializers.ImageField(use_url=True)
+    class Meta:
+        model=Image
+        fields=(
+            "img_path",
+        )
+
+
 class PostSerializers(ModelSerializer):
     user=TinyUserSerializers(read_only=True)
-    image=ImageSerializers(many=True)
+    images=ImageSerializers(many=True, read_only=True, required=False)
+    uploaded_img=serializers.ListField(
+        child=serializers.ImageField(
+        max_length=1000000,
+        allow_empty_file=False,
+        use_url=False,), 
+        write_only=True
+    )
+    #images=serializers.SerializerMethodField()#required=False : 필수 필드가 아닌 선택 필드로 지정 
+
     class Meta:
         model=Post
         fields=(
             "pk",
             "user",
             "content",
-            "image",
+            "images",#ImageModel의 post field의 relatedname 이용 
+            "uploaded_img",
             "category",
             "pet_category",
+            
         )
+    def create(self, validated_data):
+        uploaded_img = validated_data.pop('uploaded_img')
+        post = Post.objects.create(**validated_data)
+        for image in uploaded_img:
+            new_img=Image.objects.create(post=post, img_path=image)
+        return post
+        
     def validate(self, data):
         content = data.get('content', None)
-        image = data.get('image', None)
-
-        if content is None and image is None:
+        images = data.get('images', None)
+        print("images2: ", images)
+        if content is None and images is None:
             raise ParseError({"error": "내용을 입력해주세요."})
+        if images and len(images)>5:
+            raise ParseError({"error":"이미지는 최대 5개까지 등록이 가능합니다."})
         return data
+    
+
 
 class PostListSerializers(ModelSerializer):#간략한 정보만을 보여줌
     user=TinyUserSerializers(read_only=True)
     pet_category=PetsSerializers(many=True)
     category=BoardSerializers()
-    image=ImageSerializers(many=True)#첫번째 이미지만 보여줌 
+    images=ImageSerializers(many=True, required=False)#첫번째 이미지만 보여줌 
 
     class Meta:
         model=Post
@@ -96,21 +115,20 @@ class PostListSerializers(ModelSerializer):#간략한 정보만을 보여줌
             "pet_category",
             "user",
             "content",
-            "image",
+            "images",
             "created_at", 
             "updated_at",
         )
-    def validate_image(self, data):
-        print(1)
-        image= data.get('image', None)
-        if len(image)>2:
-            return image[0]
-
+    def get_images(self, post):
+        images = post.images.all()
+        if images.exist():
+            return ImageSerializers(images.first(), context=self.context).data   
+        return [] 
 class PostDetailSerializers(ModelSerializer):#image 나열
     user=TinyUserSerializers()
     pet_category=PetsSerializers(many=True)
     category=BoardSerializers()
-    image=ImageSerializers(many=True)
+    images=ImageSerializers(many=True)
     
     class Meta:
         model=Post
@@ -120,7 +138,7 @@ class PostDetailSerializers(ModelSerializer):#image 나열
             "pet_category",
             "user", 
             "content",
-            "image",
+            "images",
             "created_at",
             "updated_at",    
         )
