@@ -1,16 +1,24 @@
 
 from pathlib import Path
 from datetime import timedelta
+import os
+import environ
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+
+env = environ.Env()
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
+
+SECRET_KEY = env("SECRET_KEY")
+
+ALLOWED_HOSTS = ["*"]
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-4-62ad&xetva7@86@(@r6$4b#+$yp=@s_t21=5r+=!^2!x3p1i'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -30,6 +38,8 @@ CUSTOM_APPS=[
     "posts.apps.PostsConfig",
     "common.apps.CommonConfig",
     "auths.apps.AuthsConfig",
+    "bookmarks.apps.BookmarksConfig",
+    "likes.apps.LikesConfig",
 ]
 
 SYSTEM_APPS = [
@@ -73,8 +83,6 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-               
-
             ],
         },
     },
@@ -98,8 +106,9 @@ REST_FRAMEWORK={
         # 'rest_framework.permissions.IsAuthenticated',
     # ),
     'DEFAULT_AUTHENTICATION_CLASSES':(
+        # 'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        # 'rest_framework_simplejwt.authentication.JWTAuthentication',
     )
 }
 SIMPLE_JWT={
@@ -154,6 +163,6 @@ MEDIA_URL = "user-uploads/"
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = "users.User"
 
-GOOGLE_MAPS_API_KEY = 'AIzaSyAjt40jPFYcHHr48qBY6rIuNPh8HjU48nw'
-KAKAO_API_KEY='edf91b087910540822410cf18d6886dc'
+GOOGLE_MAPS_API_KEY = env("GOOGLE_MAPS_API_KEY")
+KAKAO_API_KEY=env("KAKAO_API_KEY")
 

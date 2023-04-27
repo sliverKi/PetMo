@@ -9,7 +9,10 @@ from users.serializers import TinyUserSerializers
 from .models import Post,Comment, Image
 from categories.models import Category
 from pets.models import Pet
+from rest_framework.exceptions import ValidationError
 import sys
+from django.shortcuts import get_object_or_404
+from django.db import transaction
 sys.setrecursionlimit(100000)
 
 
@@ -59,15 +62,17 @@ class ImageSerializers(ModelSerializer):
 
 
 class PostSerializers(ModelSerializer):
+    pet_category=PetsSerializers(many=True, read_only=True)
     user=TinyUserSerializers(read_only=True)
     images=ImageSerializers(many=True, read_only=True, required=False)
-    uploaded_img=serializers.ListField(
-        child=serializers.ImageField(
-        max_length=1000000,
-        allow_empty_file=False,
-        use_url=False,), 
-        write_only=True
-    )
+    # uploaded_img=serializers.ListField(
+    #     child=serializers.ImageField(
+    #     max_length=1000000,
+    #     allow_empty_file=False,
+    #     use_url=False,), 
+    #     write_only=True,
+    #     required=False
+    # )
     #images=serializers.SerializerMethodField()#required=False : 필수 필드가 아닌 선택 필드로 지정 
 
     class Meta:
@@ -76,23 +81,41 @@ class PostSerializers(ModelSerializer):
             "pk",
             "user",
             "content",
-            "images",#ImageModel의 post field의 relatedname 이용 
-            "uploaded_img",
+            # "images",#ImageModel의 post field의 relatedname 이용 
+            # "uploaded_img",
+            "images",
             "category",
             "pet_category",
             
         )
-    def create(self, validated_data):
-        uploaded_img = validated_data.pop('uploaded_img')
-        post = Post.objects.create(**validated_data)
-        for image in uploaded_img:
-            new_img=Image.objects.create(post=post, img_path=image)
+    def create(self, validated_data):  
+        pet_category_data=validated_data.pop("pet_category", None)
+        uploaded_img = validated_data.pop("upload_image", None)#값 없으면 None
+        try:
+            with transaction.atomic():
+                post = Post.objects.create(**validated_data)
+            
+                if uploaded_img:
+                    Image.objects.create(post=post, img_path=uploaded_img)
+                    # for image in uploaded_img:
+                if pet_category_data:
+                    if isinstance(pet_category_data, list):
+                        for pet_category in pet_category_data:
+                            category = get_object_or_404(Pet,species=pet_category)
+                            post.pet_category.add(category)
+                    else:
+                        category = get_object_or_404(Pet,species=pet_category_data)
+                        post.pet_category.add(category)
+                else:
+                    raise ParseError(1)
+        except Exception as e:
+            print(e)
+            raise ValidationError({"error":str(e)})
         return post
         
     def validate(self, data):
         content = data.get('content', None)
         images = data.get('images', None)
-        print("images2: ", images)
         if content is None and images is None:
             raise ParseError({"error": "내용을 입력해주세요."})
         if images and len(images)>5:

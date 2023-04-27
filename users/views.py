@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.conf import settings
+from config.settings import KAKAO_API_KEY, GOOGLE_MAPS_API_KEY
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .serializers import TinyUserSerializers, PrivateUserSerializers, AddressSerializers
@@ -72,7 +73,7 @@ class getIP(APIView):#ip기반 현위치 탐색
 
             if not client_ip_address:
                 return Response({"error": "could not get Client IP address"}, status=status.HTTP_400_BAD_REQUEST)
-            geolocation_url =  f'https://www.googleapis.com/geolocation/v1/geolocate?key={settings.GOOGLE_MAPS_API_KEY}'
+            geolocation_url =  f'https://www.googleapis.com/geolocation/v1/geolocate?key={GOOGLE_MAPS_API_KEY}'
             data = {
                 'considerIp':'true',#IP참조 
             }
@@ -87,7 +88,7 @@ class getIP(APIView):#ip기반 현위치 탐색
                 Xlongitude = location.get('lng')#경도
                 print("경도:, ",Xlongitude )
                 region_url= f'https://dapi.kakao.com/v2/local/geo/coord2regioncode.json?x={Xlongitude}&y={Ylatitude}'
-                headers={'Authorization': f'KakaoAK {settings.KAKAO_API_KEY}' }
+                headers={'Authorization': f'KakaoAK {KAKAO_API_KEY}' }
                 response=requests.get(region_url, headers=headers)
             
                 datas=response.json().get('documents')
@@ -137,7 +138,7 @@ class getQuery(APIView):#검색어 입력 기반 동네 검색
             raise ParseError("검색할 키워드를 입력해 주세요.")
         
         search_url='https://dapi.kakao.com/v2/local/search/address.json'
-        headers={'Authorization': f'KakaoAK {settings.KAKAO_API_KEY}'}
+        headers={'Authorization': f'KakaoAK {KAKAO_API_KEY}'}
         params={'query': search_query}
        
         response=requests.get(search_url, headers=headers, params=params)

@@ -50,6 +50,7 @@ class Image(CommonModel):
         upload_to="post_images", 
         blank=True, 
         null=True)
+    
     #이미지 파일의 저장 경로를 받음
     #이미지파일의 주소 경로가 아님.
 class Comment(CommonModel):

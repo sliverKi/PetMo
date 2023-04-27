@@ -11,4 +11,6 @@ urlpatterns = [
     path("api/v1/posts/", include("posts.urls")),
     path("api/v1/categories/", include("categories.urls")),
     path("api/v1/auths/", include("auths.urls")),
+    # path("api/v1/bookmarks", include("bookmarks.urls")),
+    # path("api/v1/likes", include("likes.urls")),
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

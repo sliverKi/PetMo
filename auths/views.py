@@ -33,23 +33,34 @@ class LogIn(APIView):
            return Response({"error":"이메일과비밀번호를 입력해주세요."}, status=status.HTTP_400_BAD_REQUEST)
         
         user=authenticate(email=email, password=password)
-
         if user is not None:
             login(request, user)
-            serializer=UserSerializers(user)
             # refresh=self.get_token(self.user)
             refresh=RefreshToken.for_user(user)
+            token = {
+                "refresh": str(refresh),
+                "access": str(refresh.access_token),#access token 생성
+                "user_id":user.id,
+                "user_email":user.email,
+                "username":user.username,
+            } 
+            return Response(token, status=status.HTTP_200_OK)
+        # if user is not None:
+        #     login(request, user)
+        #     serializer=UserSerializers(user)
+        #     # refresh=self.get_token(self.user)
+        #     refresh=RefreshToken.for_user(user)
             
-            refresh_token: str(refresh)
-            access_token: str(refresh.access_token)#access token 생성
-            request.session["refresh_token"]=refresh_token
-            request.session["access_token"]=access_token
+        #     refresh_token: str(refresh)
+        #     access_token: str(refresh.access_token)#access token 생성
+        #     # request.session["refresh_token"]=refresh_token
+        #     # request.session["access_token"]=access_token
             
-            res = Response({
-                "user":serializer.data,
-                "success":"Login Success!",
-            }, status=status.HTTP_200_OK)
-            return Response(res)
+        #     res = Response({
+        #         "user":serializer.data,
+        #         "success":"Login Success!",
+        #     }, status=status.HTTP_200_OK)
+        #     return Response(res)
         else:
             return Response({"error":"Invalid Credentials"}, status=status.HTTP_400_BAD_REQUEST)
         
@@ -110,6 +121,8 @@ class Register(APIView):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class KakaoException(Exception):
+    pass
 
 class KakaoLogin(APIView):
     def get(self, request):
@@ -150,10 +163,12 @@ class KakaoCallBack(APIView):
                 },
             )
             profile_json = profile_request.json()
-            print(profile_request)
-           
+            # print(profile_request)
             kakao_account =profile_json.get("kakao_account")
-            print(kakao_account)
+            # print(kakao_account)
+            
+            if email is None:
+                raise KakaoException()
             email = kakao_account.get("email", None)#왜 None?
             nickname = kakao_account.get("profile", None).get("nickname", None)
             
@@ -192,5 +207,9 @@ class KakaoCallBack(APIView):
                 )
     
 
-class Naver(APIView):
-        
+class NaverLogin(APIView):#naver는 https로 통신이여서 나중에 서버 올리고 추후 작업 들어가야 할 듯 
+    pass
+
+class NaverCallBack(APIView):
+    pass
+
