@@ -11,4 +11,8 @@ urlpatterns=[
     path("sign-out", views.LogOut.as_view()),
 
     path("kakao", views.KakaoLogin.as_view()),
+    path("kakao/callback", views.KakaoCallBack.as_view()),
+
+    path("naver", views.NaverLogin.as_view()),
+    # path("naver/callback", views.NaverCallBack.as_view())
 ]

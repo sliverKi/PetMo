@@ -10,11 +10,13 @@ python = "^3.11"
 django = "^4.2"
 djangorestframework = "^3.14.0"
 djangorestframework-simplejwt = "^5.2.2"
-django-allauth = "^0.54.0"
 dj-rest-auth = "^3.0.0"
 django-cors-headers = "^3.14.0"
 pillow = "^9.5.0"
 django-multiupload = "^0.6.1"
+django-allauth = "^0.54.0"
+django-rest-auth = "^0.9.5"
+django-environ = "^0.10.0"
 
 
 [build-system]

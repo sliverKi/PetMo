@@ -39,9 +39,17 @@ SYSTEM_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
+
 ]
+SITE_ID = 1
+
 INSTALLED_APPS = SYSTEM_APPS + THIRD_PARTY_APPS + CUSTOM_APPS
 
+AUTHENTICATION_BACKENDS = [
+    # Needed to login by username in Django admin, regardless of `allauth`
+    "django.contrib.auth.backends.ModelBackend",
+]
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -65,6 +73,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+               
+
             ],
         },
     },
@@ -146,3 +156,4 @@ AUTH_USER_MODEL = "users.User"
 
 GOOGLE_MAPS_API_KEY = 'AIzaSyAjt40jPFYcHHr48qBY6rIuNPh8HjU48nw'
 KAKAO_API_KEY='edf91b087910540822410cf18d6886dc'
+

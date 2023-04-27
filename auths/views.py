@@ -1,5 +1,8 @@
 from django.shortcuts import render
+from django.shortcuts import redirect
 from django.contrib.auth import authenticate, login, logout
+from django.http import HttpResponseRedirect
+from config.settings import KAKAO_API_KEY
 from rest_framework.response import Response
 from rest_framework.views import APIView 
 from rest_framework.permissions import AllowAny
@@ -14,6 +17,7 @@ from users.models import User
 from users.serializers import UserSerializers
 
 import requests
+
 class LogIn(APIView):
     def post(self, request, format=None):
         email=request.data.get('email')
@@ -26,23 +30,26 @@ class LogIn(APIView):
             raise NotFound
         
         if not email or not password:
-            raise ParseError("잘못된 정보를 입력하셨습니다.")
+           return Response({"error":"이메일과비밀번호를 입력해주세요."}, status=status.HTTP_400_BAD_REQUEST)
         
         user=authenticate(email=email, password=password)
 
         if user is not None:
             login(request, user)
+            serializer=UserSerializers(user)
             # refresh=self.get_token(self.user)
             refresh=RefreshToken.for_user(user)
-            token = {
-                "refresh": str(refresh),
-                "access": str(refresh.access_token),#access token 생성
-                "user_id":user.id,
-                "user_email":user.email,
-                "username":user.username,
-            } 
-            return Response(token, status=status.HTTP_200_OK)
-            #return Response(token, status=status.HTTP_200_OK)::front 전달
+            
+            refresh_token: str(refresh)
+            access_token: str(refresh.access_token)#access token 생성
+            request.session["refresh_token"]=refresh_token
+            request.session["access_token"]=access_token
+            
+            res = Response({
+                "user":serializer.data,
+                "success":"Login Success!",
+            }, status=status.HTTP_200_OK)
+            return Response(res)
         else:
             return Response({"error":"Invalid Credentials"}, status=status.HTTP_400_BAD_REQUEST)
         
@@ -91,6 +98,7 @@ class LogOut(APIView):
         except Exception as e:
             print(e)
             return Response({"error":"LogOut Failed..."}, status=status.HTTP_406_NOT_ACCEPTABLE)        
+
 class Register(APIView):
     def post(self, request, format=None):
         serializer=UserSerializers(data=request.data)
@@ -104,48 +112,85 @@ class Register(APIView):
 
 
 class KakaoLogin(APIView):
-    def post(self, request):
+    def get(self, request):
+        kakao_api="https://kauth.kakao.com/oauth/authorize?response_type=code"
+        redirect_uri="http://127.0.0.1:8000/api/v1/auths/kakao/callback"
+        client_id=KAKAO_API_KEY
+        return redirect(f"{kakao_api}&client_id={client_id}&redirect_uri={redirect_uri}")
+
+class KakaoCallBack(APIView):
+    def get(self, request):
         try:
-            code = request.data.get("code")
-            access_token = (
-                requests.post(
-                    "https://kauth.kakao.com/oauth/token",
-                    headers={
-                        "Content-Type": "application/x-www-form-urlencoded",
-                    },
-                    data={
-                        "grant_type": "authorization_code",
-                        "client_id": "da7b6b984fe482fd404d22bff8e2f803",
-                        "redirect_uri": "http://127.0.0.1:3000/social/kakao",
-                        "code": code,
-                    },
-                )
-                .json()
-                .get("access_token")
+            code = request.GET.get("code")
+            client_id = KAKAO_API_KEY
+            redirect_uri = "http://127.0.0.1:8000/api/v1/auths/kakao/callback"
+            token_request = requests.post(
+                "https://kauth.kakao.com/oauth/token",
+                data={
+                    "grant_type": "authorization_code",
+                    "client_id": client_id,
+                    "redirect_uri": redirect_uri,
+                    "code": code,
+               },
             )
-            user_data = requests.get(
+            token_json = token_request.json()
+            print(token_json)
+            
+            error = token_json.get("error", None)
+            
+            if error is not None:
+                return Response({"message": error}, status=status.HTTP_400_BAD_REQUEST)
+            
+            access_token = token_json.get("access_token")
+            profile_request = requests.get(
                 "https://kapi.kakao.com/v2/user/me",
                 headers={
                     "Authorization": f"Bearer {access_token}",
-                    "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+                    # "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
                 },
-            ).json()
-            kakao_account = user_data.get("kakao_account")
-            profile = kakao_account.get("profile")
-            try:
-                user = User.objects.get(email=kakao_account.get("email"))
-                login(request, user)
-                return Response(status=200)
-            except User.DoesNotExist:
-                user = User.objects.create(
-                    email=kakao_account.get("email"),
-                    username=profile.get("nickname"),
-                    name=profile.get("nickname"),
-                    avatar=profile.get("profile_image_url"),
+            )
+            profile_json = profile_request.json()
+            print(profile_request)
+           
+            kakao_account =profile_json.get("kakao_account")
+            print(kakao_account)
+            email = kakao_account.get("email", None)#왜 None?
+            nickname = kakao_account.get("profile", None).get("nickname", None)
+            
+        except KeyError:
+            return Response({"message": "INVALID_TOKEN"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # except access_token.DoesNotExist:
+        #     return Response({"message": "INVALID_TOKEN"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if User.objects.filter(email=email).exists():
+            kakao_user = User.objects.get(email=email)
+            refresh=RefreshToken.for_user(kakao_user)
+            response=HttpResponseRedirect(
+                # front 주소 
+                # f"http://127.0.0.1:8000/KakaoLogin?refresh={str(refresh)}&access={str(refresh.access_token)}"
+
+            )
+            print("success")
+            return Response(response, status=status.HTTP_200_OK)
+            
+        else:
+            if email:
+                user=User.objects.create(
+                    email=email, username=nickname,
                 )
-            user.set_unusable_password()
-            user.save()
-            login(request, user)
-            return Response(status=200)
-        except Exception:
-            return Response(status=400)
+                refresh = RefreshToken.for_user(user)
+                response=HttpResponseRedirect(
+                    # f"http://127.0.0.1:8000/KakaoLogin?refresh={str(refresh)}&access={str(refresh.access_token)}"
+                    
+                )
+                return Response(response, status=status.HTTP_200_OK)
+            else:
+                return Response(
+                    {"error":"MISSING ACCOUNT"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+    
+
+class Naver(APIView):
+        
