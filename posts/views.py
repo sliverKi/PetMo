@@ -103,7 +103,6 @@ class CommentDetail(APIView):# 댓글:  조회 생성, 수정, 삭제(ok)
 class Posts(APIView):
     # authentication_classes=[SessionAuthentication]
     # permission_classes=[IsAuthenticated]
-    # parser_classes = (MultiPartParser, FormParser)
     def get(self, request):
         all_posts=Post.objects.all()
         serializer=PostListSerializers(all_posts, many=True)
@@ -111,36 +110,23 @@ class Posts(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     def post(self, request):#게시글 생성
-        # {"content":"Q", "category":1, "pet_category":[1]}
-        # if 'uploaded_img' in request.data:
-            serializer=PostSerializers(data=request.data)
-            tmp = request.data.get("upload_img")
-            if serializer.is_valid():  
-                post=serializer.save(
-                    user=request.user,
-                    pet_category=request.data.get("pet_category"),
-                    upload_image=request.data.get("upload_img")
-                )
-                serializer=PostListSerializers(
-                    post,
-                    context={'request': request}, 
-                )
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        # else :
-        #     serializer=PostSerializers(data=request.data,)
-            
-        #     if serializer.is_valid():    
-        #         post=serializer.save(
-        #             user=request.user,
-        #         )
-        #         serializer=PostListSerializers(
-        #             post,
-        #             context={'request': request}, 
-        #         )
-        #         return Response(serializer.data, status=status.HTTP_201_CREATED)
-        #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+  
+        serializer=PostSerializers(data=request.data)
+        print("re: ", request.data)
+        
+        if serializer.is_valid():  
+            post=serializer.save(
+                user=request.user,
+                category=request.data.get("category"),
+                pet_category=request.data.get("pet_category"),
+                Image=request.data.get("Image")
+            )
+            serializer=PostListSerializers(
+                post,
+                context={'request': request}
+            )
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class PostDetail(APIView):#게시글의 자세한 정보(+댓글 포함)
     def get_object(self, pk):
@@ -151,6 +137,8 @@ class PostDetail(APIView):#게시글의 자세한 정보(+댓글 포함)
 
     def get(self,request,pk):
         post=self.get_object(pk)
+        post.watcher+=1 # 조회수 카운트
+        post.save()
         serializer = PostDetailSerializers(
             post,
             context={"request":request},
@@ -170,7 +158,7 @@ class PostDetail(APIView):#게시글의 자세한 정보(+댓글 포함)
         if serializer.is_valid():
             try:
                 post=serializer.save(
-                    # image=request.data["image"],
+                    pet_category=request.data.get("pet_category"),
                     category=request.data.get("category")
                 )
             except: 

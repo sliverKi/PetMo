@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import Post,Image,Comment
+from .models import Post,Comment
+from images.models import Image
 @admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):
     list_display=("id","user","post","content",)

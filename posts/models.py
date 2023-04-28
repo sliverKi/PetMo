@@ -5,7 +5,7 @@ from common.models import CommonModel
 # 해야 할일 -> 다중이미지,
 # 댓글 pageniation 최대 5개까지 보여주기
 # 대댓글 3개
-
+# 좋아요, 조회수, 댓글수, 북마크 수
 class Post(CommonModel):
     user=models.ForeignKey(
         "users.User",
@@ -35,24 +35,16 @@ class Post(CommonModel):
         null=True,
         related_name="posts",
     )
+
+    watcher=models.PositiveIntegerField( # 조회수
+        default=0,
+        editable=False,
+    )
     def __str__(self):
         return f"{self.user} - {self.content}"
     
-class Image(CommonModel):
-    post=models.ForeignKey(
-        "posts.Post",
-        on_delete=models.CASCADE,
-        blank=True,
-        null=True,
-        related_name="images"
-    )
-    img_path=models.ImageField(
-        upload_to="post_images", 
-        blank=True, 
-        null=True)
-    
-    #이미지 파일의 저장 경로를 받음
-    #이미지파일의 주소 경로가 아님.
+
+
 class Comment(CommonModel):
     user=models.ForeignKey(
         "users.User",

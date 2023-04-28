@@ -37,6 +37,7 @@ CUSTOM_APPS=[
     "categories.apps.CategoriesConfig",
     "posts.apps.PostsConfig",
     "common.apps.CommonConfig",
+    "images.apps.ImagesConfig",
     "auths.apps.AuthsConfig",
     "bookmarks.apps.BookmarksConfig",
     "likes.apps.LikesConfig",
@@ -142,7 +143,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Seoul'
 
 USE_I18N = True
 
@@ -166,3 +167,5 @@ AUTH_USER_MODEL = "users.User"
 GOOGLE_MAPS_API_KEY = env("GOOGLE_MAPS_API_KEY")
 KAKAO_API_KEY=env("KAKAO_API_KEY")
 
+CF_TOKEN=env("CF_TOKEN")
+CF_ID=env("CF_ID")
