@@ -14,6 +14,9 @@ from categories.models import Category
 from categories.serializers import BoardSerializers
 from pets.models import Pet
 from pets.serializers import PetsSerializers
+from likes.models import Like
+from likes.serializers import LikeSerializers
+
 import sys
 
 from django.db import transaction

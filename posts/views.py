@@ -1,16 +1,16 @@
 from django.shortcuts import render
-from django.http import QueryDict
+
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.parsers import MultiPartParser, FormParser
+
 from rest_framework.exceptions import NotFound, PermissionDenied, ParseError
 from categories.serializers import BoardSerializers
 from pets.serializers import PetsSerializers
 
-from .models import Post,Comment
+from .models import Post,Like, Comment
 from .serializers import (
     PostSerializers,
     PostListSerializers, PostDetailSerializers, 
@@ -174,6 +174,37 @@ class PostDetail(APIView):#게시글의 자세한 정보(+댓글 포함)
             raise PermissionDenied("게시글 삭제 권한이 없습니다.")
         post.delete()
         return Response(status=status.HTTP_200_OK)
+    
+class Likes(APIView):
+    def get_post_id(self, pk):
+        pass
+    def get_user_id(slef, user_pk):
+        pass
+    def post(self, request,pk):
+        try:
+            user=request.user
+            post_id=request.data.get("post", None)
+            if not post_id:
+                return Response({"error":"server error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            if not Post.objects.filter(id=post_id).exist():
+                return Response({"error":"이미 삭제된 게시글 입니다!"}, status=status.HTTP_404_NOT_FOUND)
+        
+            posting=Post.objects.get(id=post_id)
+            if Like.objects.filter(user=request.user, posting=posting).exists():#already like
+                Like.objects.filter(user=request.user, posting=posting).delete() #like-delete
+                like_count=Like.objects.get.filter(osting=posting).count()
+                return Response(like_count, status=status.HTTP_200_OK)#카운트 수 반환
+            
+            Like.objects.create(
+                user=request.user,
+                posting=posting
+            )
+            like_count=Like.objects.get.filter(osting=posting).count()
+            return Response(like_count, status=status.HTTP_200_OK)#카운트 수 반환
+        except Exception as e:
+            raise Response({"error":str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+                
 
 class PostComments(APIView):#게시글에 등록 되어진 댓글, 대댓글
     def get_object(self, pk):
