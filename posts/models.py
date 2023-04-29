@@ -17,13 +17,13 @@ class Post(CommonModel):
         blank=True,
         null=True,
     )
-    comments=models.ManyToManyField(
-        "posts.Comment",
-        blank=True,
-        null=True,
-        # on_delete=models.SET_NULL,
-        related_name="posts",
-    )
+    # comments=models.ManyToManyField(
+    #     "posts.Comment",
+    #     blank=True,
+    #     null=True,
+    #     # on_delete=models.SET_NULL,
+    #     related_name="posts",
+    # )
     pet_category=models.ManyToManyField(
         "pets.Pet",
         related_name="posts"
@@ -40,28 +40,16 @@ class Post(CommonModel):
         default=0,
         editable=False,
     )
-    # def likeCount()
-    #     self.likes.count
 
-    # like=models.ManyToManyField(
-    #     "likes.Like",
-    #     editable=False,
-    #     related_name="user_like"
-    # )
+
+    @property
+    def like_count(self):
+        return self.postlike.count()
+    
     def __str__(self):
         return f"{self.user} - {self.content}"
     
-class Like(CommonModel):
-    user=models.ForeignKey(
-        "users.User",
-        on_delete=models.CASCADE,
-        related_name="like_users"
-    )
-    post=models.ForeignKey(
-        "posts.Post",
-        on_delete=models.CASCADE,
-        related_name="like_posts"
-    )
+
 
 class Comment(CommonModel):
     user=models.ForeignKey(

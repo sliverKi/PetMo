@@ -1,9 +1,7 @@
 from django.contrib import admin
-from .models import Post,Like, Comment
+from .models import Post, Comment
 from images.models import Image
-@admin.register(Like)
-class LikesAdmin(admin.ModelAdmin):
-    list_display=("id", "user", "post")
+
 @admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):
     list_display=("id","user","post","content",)

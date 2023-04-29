@@ -10,7 +10,7 @@ from rest_framework.exceptions import NotFound, PermissionDenied, ParseError
 from categories.serializers import BoardSerializers
 from pets.serializers import PetsSerializers
 
-from .models import Post,Like, Comment
+from .models import Post, Comment
 from .serializers import (
     PostSerializers,
     PostListSerializers, PostDetailSerializers, 
@@ -106,7 +106,6 @@ class Posts(APIView):
     def get(self, request):
         all_posts=Post.objects.all()
         serializer=PostListSerializers(all_posts, many=True)
-        #등록된 게시글을 불러온다. 만약, 등록된 게시글에 이미지가 1장이상인 경우 가장 처음의 이미지만 보여준다, 만약 등록된 이미지가 없는 경우 빈 리스트로 보여준다.
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     def post(self, request):#게시글 생성
@@ -175,34 +174,6 @@ class PostDetail(APIView):#게시글의 자세한 정보(+댓글 포함)
         post.delete()
         return Response(status=status.HTTP_200_OK)
     
-class Likes(APIView):
-    def get_post_id(self, pk):
-        pass
-    def get_user_id(slef, user_pk):
-        pass
-    def post(self, request,pk):
-        try:
-            user=request.user
-            post_id=request.data.get("post", None)
-            if not post_id:
-                return Response({"error":"server error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            if not Post.objects.filter(id=post_id).exist():
-                return Response({"error":"이미 삭제된 게시글 입니다!"}, status=status.HTTP_404_NOT_FOUND)
-        
-            posting=Post.objects.get(id=post_id)
-            if Like.objects.filter(user=request.user, posting=posting).exists():#already like
-                Like.objects.filter(user=request.user, posting=posting).delete() #like-delete
-                like_count=Like.objects.get.filter(osting=posting).count()
-                return Response(like_count, status=status.HTTP_200_OK)#카운트 수 반환
-            
-            Like.objects.create(
-                user=request.user,
-                posting=posting
-            )
-            like_count=Like.objects.get.filter(osting=posting).count()
-            return Response(like_count, status=status.HTTP_200_OK)#카운트 수 반환
-        except Exception as e:
-            raise Response({"error":str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
                 
 

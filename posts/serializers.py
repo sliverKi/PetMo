@@ -14,8 +14,8 @@ from categories.models import Category
 from categories.serializers import BoardSerializers
 from pets.models import Pet
 from pets.serializers import PetsSerializers
-from likes.models import Like
-from likes.serializers import LikeSerializers
+from likes.models import PostLike
+# from likes.serializers import LikeSerializers
 
 import sys
 
@@ -61,13 +61,24 @@ class ReplySerializers(ModelSerializer):
         return serializer.data
 
 
-
+class TinyPostSerializers(ModelSerializer):
+    print(3)
+    Image=ImageSerializers(many=True, read_only=True, required=False)
+    class Meta:
+        model=Post
+        fields=(
+            "pk",
+            "content",
+            "Image",
+            "like_count"
+            #"comments_count"
+            )
 class PostSerializers(ModelSerializer):
     category=BoardSerializers(many=True, read_only=True)
     pet_category=PetsSerializers(many=True, read_only=True)
     user=TinyUserSerializers(read_only=True)
     Image=ImageSerializers(many=True, read_only=True, required=False)
-   
+    is_like=serializers.SerializerMethodField()#현재 사용자가 게시글을 좋아요 했는지를 여부를 나타냄
     class Meta:
         model=Post
         fields=(
@@ -77,8 +88,16 @@ class PostSerializers(ModelSerializer):
             "user",
             "content",
             "Image",#ImageModel의 relatedname 이용 
+            "like_count",
+            "is_like",
         )
 
+    def get_is_like(self, data):
+        request=self.context.get("request")
+        if request and request.user.is_authenticated:
+            return PostLike.objects.filter(user=request.user, post=data).exists()
+        return False
+    
     def create(self, validated_data):  
         #input data: {"content":"test post", "pet_category":["cat"], "Image":[], "category":"Review"}        
         category_data=validated_data.pop("category", None)
@@ -133,7 +152,7 @@ class PostListSerializers(ModelSerializer):#간략한 정보만을 보여줌
     pet_category=PetsSerializers(many=True)
     category=BoardSerializers()
     Image=ImageSerializers(many=True, read_only=True, required=False)
-
+    
     class Meta:
         model=Post
         fields=(
@@ -146,18 +165,20 @@ class PostListSerializers(ModelSerializer):#간략한 정보만을 보여줌
             "created_at", 
             "updated_at",
             "watcher",
+            "like_count",
         )
     def get_images(self, post):
         images = post.images.all()
         if images.exist():
             return ImageSerializers(images.first(), context=self.context).data   
         return [] 
+    
 class PostDetailSerializers(ModelSerializer):#image 나열
     user=TinyUserSerializers()
     pet_category=PetsSerializers(many=True)
     category=BoardSerializers()
     Image=ImageSerializers(many=True, read_only=True, required=False)
-
+    is_like=serializers.SerializerMethodField()
     
     class Meta:
         model=Post
@@ -171,8 +192,19 @@ class PostDetailSerializers(ModelSerializer):#image 나열
             "created_at",
             "updated_at",    
             "watcher",
+            "like_count",
+            "is_like"
         )
-
+    
+    def get_is_like(self, data):
+        request = self.context.get("request")
+        if request:
+            if request.user.is_authenticated:
+                return PostLike.objects.filter(
+                    user=request.user,
+                    post__pk=data.pk,
+                ).exists()
+        return False
 
     #{ update()-put()
     #"content": "test",
