@@ -51,7 +51,6 @@ class Post(CommonModel):
     @property
     def comments_count(self):
         return self.post_comments.filter(parent_comment=None).count()
-        # return Comment.objects.filter(post=self.post_comments, parent_comment=None).count()
  
     
     def __str__(self):
@@ -83,10 +82,7 @@ class Comment(CommonModel):
         null=True,
         related_name="replies",
     )
-
+   
     def __str__(self):
         return f"{self.user} - {self.content}"
-    # @property
-    # def coments_count(self):
-    #     return Comment.objects.filter(post=self.post, parent_comment=None).count()
     

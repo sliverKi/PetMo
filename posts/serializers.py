@@ -33,7 +33,7 @@ class CommentSerializers(ModelSerializer):
             "user",
             "content",
             "created_at",
-            "updated_at",
+            "updated_at"
         ) 
 # class CommentDetailSerializers(ModelSerializer):
 #     class Meta:
@@ -52,8 +52,7 @@ class ReplySerializers(ModelSerializer):
             "content",
             "created_at",
             "updated_at",
-            "replies",
-            
+            "replies"
         )
 
     def get_replies(self, obj):
@@ -178,7 +177,7 @@ class PostListSerializers(ModelSerializer):#간략한 정보만을 보여줌
         )
     def get_images(self, post):
         images = post.images.all()
-        if images.exist():
+        if images.exists():
             return ImageSerializers(images.first(), context=self.context).data   
         return [] 
     def get_comments_count(self, obj):

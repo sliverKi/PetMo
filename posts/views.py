@@ -47,10 +47,10 @@ class Comments(APIView):
                 return Response({"error":"해당 댓글이 존재하지 않습니다."}, status=status.HTTP_404_NOT_FOUND)
         
             comment=Comment.objects.create(
-            content=content,
-            user=request.user,
-            post=parent_comment.post,
-            parent_comment=parent_comment
+                content=content,
+                user=request.user,
+                post=parent_comment.post,
+                parent_comment=parent_comment
             )
             serializer = ReplySerializers(comment)
             return Response(serializer.data, status=status.HTTP_201_CREATED)           
@@ -58,7 +58,10 @@ class Comments(APIView):
             print("댓글")
             serializer=CommentSerializers(data=request.data)
             if serializer.is_valid():
-                comment=serializer.save(post=post)
+                comment=serializer.save(
+                    post=post,
+                    user=request.user,
+                )
                 serializer=CommentSerializers(comment)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 class CommentDetail(APIView):# 댓글:  조회 생성, 수정, 삭제(ok)

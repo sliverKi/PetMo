@@ -1,3 +1,17 @@
 from django.db import models
+from common.models import CommonModel
 
-# Create your models here.
+class Bookmark(CommonModel):
+
+    user=models.ForeignKey(
+        "users.User",
+        on_delete=models.CASCADE,
+        related_name="bookmarks"
+    )
+    post=models.ManyToManyField(
+        "posts.Post",
+        related_name="bookmarks"
+    )
+    
+    def __str__(self):
+        return f"{self.user}-{self.post}"
