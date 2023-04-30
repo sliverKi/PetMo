@@ -27,7 +27,7 @@ class CommentSerializers(ModelSerializer):
     class Meta:
         model=Comment
         fields=( 
-            "id",
+            "pk",
             "parent_comment",
             "post",  
             "user",
@@ -35,12 +35,13 @@ class CommentSerializers(ModelSerializer):
             "created_at",
             "updated_at",
         ) 
-class CommentDetailSerializers(ModelSerializer):
-    class Meta:
-        model=Comment
-        fields='__all__'
+# class CommentDetailSerializers(ModelSerializer):
+#     class Meta:
+#         model=Comment
+#         fields='__all__'
 class ReplySerializers(ModelSerializer):
     replies=serializers.SerializerMethodField()
+    
     class Meta:
         model=Comment
         fields=(
@@ -52,17 +53,22 @@ class ReplySerializers(ModelSerializer):
             "created_at",
             "updated_at",
             "replies",
+            
         )
+
     def get_replies(self, obj):
         replies=Comment.objects.filter(parent_comment=obj.id).order_by('created_at')
         if not replies.exists():
             return None
         serializer=ReplySerializers(replies, many=True,)
         return serializer.data
+    
+    def get_coments_count(self, obj):
+        return obj.coments_count
+    
 
 
-class TinyPostSerializers(ModelSerializer):
-    print(3)
+class TinyPostSerializers(ModelSerializer):#좋아요 기능에서 이용
     Image=ImageSerializers(many=True, read_only=True, required=False)
     class Meta:
         model=Post
@@ -70,15 +76,16 @@ class TinyPostSerializers(ModelSerializer):
             "pk",
             "content",
             "Image",
-            "like_count"
-            #"comments_count"
+            "like_count"#게시글 좋아요 수 
+            # "comments_count"#총 댓글 수 
             )
-class PostSerializers(ModelSerializer):
+class PostSerializers(ModelSerializer):#댓글 없음.
     category=BoardSerializers(many=True, read_only=True)
     pet_category=PetsSerializers(many=True, read_only=True)
     user=TinyUserSerializers(read_only=True)
     Image=ImageSerializers(many=True, read_only=True, required=False)
     is_like=serializers.SerializerMethodField()#현재 사용자가 게시글을 좋아요 했는지를 여부를 나타냄
+    
     class Meta:
         model=Post
         fields=(
@@ -89,7 +96,7 @@ class PostSerializers(ModelSerializer):
             "content",
             "Image",#ImageModel의 relatedname 이용 
             "like_count",
-            "is_like",
+            "is_like"
         )
 
     def get_is_like(self, data):
@@ -97,6 +104,7 @@ class PostSerializers(ModelSerializer):
         if request and request.user.is_authenticated:
             return PostLike.objects.filter(user=request.user, post=data).exists()
         return False
+
     
     def create(self, validated_data):  
         #input data: {"content":"test post", "pet_category":["cat"], "Image":[], "category":"Review"}        
@@ -152,7 +160,7 @@ class PostListSerializers(ModelSerializer):#간략한 정보만을 보여줌
     pet_category=PetsSerializers(many=True)
     category=BoardSerializers()
     Image=ImageSerializers(many=True, read_only=True, required=False)
-    
+    comments_count=serializers.SerializerMethodField()
     class Meta:
         model=Post
         fields=(
@@ -164,14 +172,18 @@ class PostListSerializers(ModelSerializer):#간략한 정보만을 보여줌
             "Image",
             "created_at", 
             "updated_at",
-            "watcher",
-            "like_count",
+            "watcher",#조회수
+            "like_count",#좋아요 수 
+            "comments_count"#댓글 수 (대댓글 미포함)
         )
     def get_images(self, post):
         images = post.images.all()
         if images.exist():
             return ImageSerializers(images.first(), context=self.context).data   
         return [] 
+    def get_comments_count(self, obj):
+        return obj.comments_count
+    
     
 class PostDetailSerializers(ModelSerializer):#image 나열
     user=TinyUserSerializers()
@@ -179,7 +191,7 @@ class PostDetailSerializers(ModelSerializer):#image 나열
     category=BoardSerializers()
     Image=ImageSerializers(many=True, read_only=True, required=False)
     is_like=serializers.SerializerMethodField()
-    
+    coments_count=serializers.SerializerMethodField()
     class Meta:
         model=Post
         fields=(
@@ -191,21 +203,21 @@ class PostDetailSerializers(ModelSerializer):#image 나열
             "Image",
             "created_at",
             "updated_at",    
-            "watcher",
-            "like_count",
+            "watcher",# 조회수 
+            "like_count",# 좋아요 수
             "is_like"
+            "coments_count"#댓글 수 
         )
     
     def get_is_like(self, data):
         request = self.context.get("request")
         if request:
             if request.user.is_authenticated:
-                return PostLike.objects.filter(
-                    user=request.user,
-                    post__pk=data.pk,
-                ).exists()
+                return PostLike.objects.filter(user=request.user,post__pk=data.pk).exists()
         return False
-
+    def get_comments_count(self, obj):
+        return obj.comments_count
+    
     #{ update()-put()
     #"content": "test",
     #"category": {"type": "Free"},

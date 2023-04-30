@@ -14,7 +14,7 @@ from .models import Post, Comment
 from .serializers import (
     PostSerializers,
     PostListSerializers, PostDetailSerializers, 
-    CommentSerializers, CommentDetailSerializers,
+    CommentSerializers, #CommentDetailSerializers,
     ReplySerializers, ImageSerializers
     )
 
@@ -80,7 +80,7 @@ class CommentDetail(APIView):# 댓글:  조회 생성, 수정, 삭제(ok)
     def put(self, request,pk): 
         # 댓글과 대댓글의 수정은 독립적으로 이루어져야 함.
         comment=self.get_object(pk=pk)
-        serializer=CommentDetailSerializers(
+        serializer=CommentSerializers(#before : commentDetailSerializers
             comment, 
             data=request.data,
             partial=True

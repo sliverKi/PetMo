@@ -10,3 +10,4 @@ class PostLikeSerializers(ModelSerializer):
         fields=("post",)
 
        
+

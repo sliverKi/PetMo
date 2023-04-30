@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Count
 from common.models import CommonModel
 
 
@@ -46,6 +47,13 @@ class Post(CommonModel):
     def like_count(self):
         return self.postlike.count()
     
+    
+    @property
+    def comments_count(self):
+        return self.post_comments.filter(parent_comment=None).count()
+        # return Comment.objects.filter(post=self.post_comments, parent_comment=None).count()
+ 
+    
     def __str__(self):
         return f"{self.user} - {self.content}"
     
@@ -75,4 +83,10 @@ class Comment(CommonModel):
         null=True,
         related_name="replies",
     )
+
+    def __str__(self):
+        return f"{self.user} - {self.content}"
+    # @property
+    # def coments_count(self):
+    #     return Comment.objects.filter(post=self.post, parent_comment=None).count()
     
