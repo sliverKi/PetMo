@@ -15,7 +15,7 @@ from categories.serializers import BoardSerializers
 from pets.models import Pet
 from pets.serializers import PetsSerializers
 from likes.models import PostLike
-# from likes.serializers import LikeSerializers
+
 
 import sys
 
@@ -75,8 +75,8 @@ class TinyPostSerializers(ModelSerializer):#좋아요 기능에서 이용
             "pk",
             "content",
             "Image",
+            "created_at",
             "like_count"#게시글 좋아요 수 
-            # "comments_count"#총 댓글 수 
             )
 class PostSerializers(ModelSerializer):#댓글 없음.
     category=BoardSerializers(many=True, read_only=True)
@@ -133,10 +133,10 @@ class PostSerializers(ModelSerializer):#댓글 없음.
                 if pet_category_data:
                     if isinstance(pet_category_data, list):
                         for pet_category in pet_category_data:
-                            pet_category = get_object_or_404(Pet,species=pet_category)
+                            pet_category = get_object_or_404(Pet,animalTypes=pet_category)
                             post.pet_category.add(pet_category)
                     else:
-                        pet_category = get_object_or_404(Pet, species=pet_category_data)
+                        pet_category = get_object_or_404(Pet, animalTypes=pet_category_data)
                         post.pet_category.add(pet_category)
                 else:
                     raise ParseError({"error": "잘못된 형식입니다."})
@@ -190,7 +190,7 @@ class PostDetailSerializers(ModelSerializer):#image 나열
     category=BoardSerializers()
     Image=ImageSerializers(many=True, read_only=True, required=False)
     is_like=serializers.SerializerMethodField()
-    coments_count=serializers.SerializerMethodField()
+    comments_count=serializers.SerializerMethodField()
     class Meta:
         model=Post
         fields=(
@@ -204,8 +204,8 @@ class PostDetailSerializers(ModelSerializer):#image 나열
             "updated_at",    
             "watcher",# 조회수 
             "like_count",# 좋아요 수
-            "is_like"
-            "coments_count"#댓글 수 
+            "is_like",#좋아요 토글
+            "comments_count"#댓글 수 
         )
     
     def get_is_like(self, data):
@@ -220,20 +220,22 @@ class PostDetailSerializers(ModelSerializer):#image 나열
     #{ update()-put()
     #"content": "test",
     #"category": {"type": "Free"},
-    #"pet_category": [{"species": "cat"}, {"species":"dog"}, {"species":"fish"}]
+    #"pet_category": [{"animalTypes": "cat"}, {"animalTypes":"dog"}, {"animalTypes":"fish"}]
     #}
     # image : 다중 이미지 만들기. 
     def update(self, instance, validated_data):
         
         instance.pet_category.clear()
         pet_category_data = validated_data.pop("pet_category", None)
-        # image_data = validated_data.pop("Image", None)
         category_data = validated_data.pop("category", None)
         
-        if category_data is not None:
-            category_instance = Category.objects.filter(type=category_data).first()
-            # print("a: ", category_instance)
-            if category_instance is None:
+        # image_data = validated_data.pop("Image", None)
+  
+        if category_data:
+            category_instance = Category.objects.filter(type=category_data.get("type")).first()
+            print("a: ", category_instance)
+            
+            if not category_instance:
                 raise serializers.ValidationError({"category": "Invalid category"})
             instance.category = category_instance
 
@@ -241,16 +243,17 @@ class PostDetailSerializers(ModelSerializer):#image 나열
         instance = super().update(instance, validated_data)
 
         # Update the many-to-many fields
-        if pet_category_data:
-            if isinstance(pet_category_data,list):
-                for pet_category in pet_category_data:
-                    pet_category = get_object_or_404(Pet,species=pet_category)
+        if pet_category_data is not None:
+            for pet_category in pet_category_data:
+                animalTypes = pet_category.get("animalTypes")
+                if animalTypes:
+                    pet_category, _ = Pet.objects.get_or_create(animalTypes=animalTypes)
                     instance.pet_category.add(pet_category)
-                
-            else:
-                pet_category, _ = Pet.objects.get_or_create(species=pet_category)
-                instance.pet_category.add(pet_category)
-
+        
+        # if image_data is not None:
+        #     for i, image in enumerate(image_data):
+        #         Image.objects.update_or_create(id=image.get("id"), defaults={"image": image.get("image"), "order": i, "post": instance})            
+        
         instance.save()
         return instance
   

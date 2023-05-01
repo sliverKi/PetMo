@@ -103,7 +103,7 @@ class CommentDetail(APIView):# 댓글:  조회 생성, 수정, 삭제(ok)
         comment.delete()
         return Response(status=status.HTTP_200_OK)
 
-class Posts(APIView):
+class Posts(APIView):#image test 해보기 - with front 
     # authentication_classes=[SessionAuthentication]
     # permission_classes=[IsAuthenticated]
     def get(self, request):
@@ -141,6 +141,7 @@ class PostDetail(APIView):#게시글의 자세한 정보(+댓글 포함)
         post=self.get_object(pk)
         post.watcher+=1 # 조회수 카운트
         post.save()
+        
         serializer = PostDetailSerializers(
             post,
             context={"request":request},
@@ -160,8 +161,8 @@ class PostDetail(APIView):#게시글의 자세한 정보(+댓글 포함)
         if serializer.is_valid():
             try:
                 post=serializer.save(
+                    category=request.data.get("category"),
                     pet_category=request.data.get("pet_category"),
-                    category=request.data.get("category")
                 )
             except: 
                 post = serializer.save(category=request.data.get("category"))    
@@ -198,6 +199,15 @@ class PostComments(APIView):#게시글에 등록 되어진 댓글, 대댓글
         #예외 : 존재 하지 않는 게시글에 댓글 작성 불가
         #예외 : 존재 하지 않는 게시글에 대댓글 작성 불가
         #에외 : 존재 하지 않는 댓글에 대댓글 작성 불가
+        #input data:
+        """{
+                "id": 2,
+                "parent_comment": 1,
+                "post": 1,
+                "user": 2,
+                "content": "(대)댓글2"
+            }"""
+        
         content=request.data.get("content")
         post_id=request.data.get("post")
         parent_comment_id = request.data.get("parent_comment", None)#부모댓글 정보 #부모댓글 정보가 전달 되지 않을 경우, None할당(=댓글)
@@ -247,10 +257,10 @@ class PostCommentsDetail(APIView):
     def get(self, request, pk, comment_pk):
         comment=self.get_comment(comment_pk)
         
-        if comment.post==self.get_post(pk):
-            return Response(ReplySerializers(comment).data, status=status.HTTP_200_OK)
-        else:
-            raise NotFound
+        return Response(ReplySerializers(comment).data, status=status.HTTP_200_OK)
+        # if comment_pk(5)==self.get_post(pk):
+        # else:
+            # raise NotFound
         
     def put(self, request, pk, comment_pk):#댓글 or 대댓글 수정
         comment=self.get_comment(comment_pk)

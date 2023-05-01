@@ -29,6 +29,10 @@ class AddressSerializers(serializers.ModelSerializer):
             "regionDepth2",
             "regionDepth3",
         )
+    #주소 전체를 입력하지 않았을 경우 ~> 전체 주소를 입력해주세요.
+    #시도 단위를 입력하지 않았을 경우 ~> 시도 단위 주소를 입력해주세요.
+    #구 단위를 입력하지 않았을 경우 ~> 구 단위 주소를 입력해주세요.
+
 class PrivateUserSerializers(ModelSerializer):
     pets=PetsSerializers(many=True)
     regionDepth2=serializers.CharField(source="user_address.regionDepth2", read_only=True)
@@ -44,6 +48,11 @@ class PrivateUserSerializers(ModelSerializer):
             )
         
     def update(self, instance, validated_data):
+        #input data
+        """ {"username":"eungi",
+            "profile":"https://www.lifewithcats.tv/wp-content/uploads/2011/04/Jumping-Cat.jpg",
+            "pets":[{"species":"cat"}, {"species":"fish"}]}
+        """
         pets_data = validated_data.pop("pets", None)
         if pets_data is not None:
             if not isinstance(pets_data, list):

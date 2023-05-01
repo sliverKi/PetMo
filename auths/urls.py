@@ -14,5 +14,5 @@ urlpatterns=[
     path("kakao/callback", views.KakaoCallBack.as_view()),
 
     path("naver", views.NaverLogin.as_view()),
-    # path("naver/callback", views.NaverCallBack.as_view())
+    # path("naver/callback", views.NaverCallBack.as_view()),
 ]

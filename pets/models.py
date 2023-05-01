@@ -3,17 +3,18 @@ from django.db import models
 class Pet(models.Model):
     
     class AnimalSpeciesChoices(models.TextChoices):
-        cat="cat","cat"
-        dog="dog", "dog"
-        fish="fish","fish"
-        hamseter="hamster","hamster"
-        reptile="reptile","reptile"
-        rabbit="rabbit","rabbit"
-        other="other","other"
+        고양이="고양이","고양이"
+        강아지="강아지", "강아지"
+        물고기="물고기","물고기"
+        햄스터="햄스터","햄스터"
+        파충류="파충류","파충류"
+        토끼="토끼","토끼"
+        새="새", "새"
+        other="기타","기타"
     
-    species=models.CharField(
+    animalTypes=models.CharField(
         max_length=255,
         choices=AnimalSpeciesChoices.choices,
     )
     def __str__(self) -> str:
-        return self.species
+        return self.animalTypes

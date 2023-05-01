@@ -205,11 +205,60 @@ class KakaoCallBack(APIView):
                     {"error":"MISSING ACCOUNT"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-    
 
-class NaverLogin(APIView):#naver는 https로 통신이여서 나중에 서버 올리고 추후 작업 들어가야 할 듯 
-    pass
+class NaverLogin(APIView):    
+    def post(self, request):
+        code = request.data.get("code")
+        state = request.data.get("state")
+        
+        access_token = (
+            requests.post(
+                "https://nid.naver.com/oauth2.0/token",
+                headers={
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
+                data={
+                    "grant_type": "authorization_code",
+                    "client_id": "kq20IeckeIhaC1BsAKuF",
+                    "client_secret": "4FTGMSzqCd",
+                    "code": code,
+                    "state": state,
+                },
+            )
+            .json()
+            .get("access_token")
+        )
+        user_data = requests.get(
+            "https://openapi.naver.com/v1/nid/me",
+            headers={"Authorization": f"Bearer {access_token}"},
+        ).json()
+        if (
+            user_data.get("resultcode") == "00"
+            and user_data.get("message") == "success"
+        ):
+            response = user_data.get("response")
+            try:
+                user = User.objects.get(email=response.get("email"))
+                login(request, user)
+                return Response(status=200)
+            except User.DoesNotExist:
+                user = User.objects.create(
+                    username=response.get("id")[:10],
+                    name=response.get("name"),
+                    phone_number=response.get("mobile").replace("-", ""),
+                    email=response.get("email"),
+                    gender="male" if response.get("gender") == "M" else "female",
+                    avatar=response.get("profile_image"),
+                    is_naver=True,
+                )
+                user.set_unusable_password()
+                user.save()
+                login(request, user)
+                refresh = RefreshToken.for_user(user)
+                return Response(
+                    {"access": str(refresh.access_token), "refresh": str(refresh)},
+                    status=201,
+                )
 
-class NaverCallBack(APIView):
-    pass
+        return Response(status=400)
 

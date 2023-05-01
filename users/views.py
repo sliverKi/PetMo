@@ -147,7 +147,7 @@ class getQuery(APIView):#검색어 입력 기반 동네 검색
         if not datas['documents']:
             raise ParseError("입력하신 주소가 없습니다. ")
         
-        return Response(datas)
+        return Response(datas, status=status.HTTP_200_OK)
 
 #동네 재 설정 todo 
 class ReSet(APIView):
