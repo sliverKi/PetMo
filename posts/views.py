@@ -119,8 +119,8 @@ class Posts(APIView):#image test 해보기 - with front
         if serializer.is_valid():  
             post=serializer.save(
                 user=request.user,
-                category=request.data.get("category"),
-                pet_category=request.data.get("pet_category"),
+                categoryType=request.data.get("categoryType"),
+                boardAnimalTypes=request.data.get("boardAnimalTypes"),
                 Image=request.data.get("Image")
             )
             serializer=PostListSerializers(
@@ -139,7 +139,7 @@ class PostDetail(APIView):#게시글의 자세한 정보(+댓글 포함)
 
     def get(self,request,pk):
         post=self.get_object(pk)
-        post.watcher+=1 # 조회수 카운트
+        post.viewCount+=1 # 조회수 카운트
         post.save()
         
         serializer = PostDetailSerializers(
@@ -161,11 +161,11 @@ class PostDetail(APIView):#게시글의 자세한 정보(+댓글 포함)
         if serializer.is_valid():
             try:
                 post=serializer.save(
-                    category=request.data.get("category"),
-                    pet_category=request.data.get("pet_category"),
+                    category=request.data.get("categoryType"),
+                    pet_category=request.data.get("boardAnimalTypes"),
                 )
             except: 
-                post = serializer.save(category=request.data.get("category"))    
+                post = serializer.save(category=request.data.get("categoryType"))    
             serializer=PostDetailSerializers(post)
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         else:

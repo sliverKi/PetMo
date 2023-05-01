@@ -6,5 +6,5 @@ from .models import Category
 class BoardSerializers(ModelSerializer):
     class Meta:
         model = Category
-        fields = ("type",)
+        fields = ("categoryType",)
         read_only=False

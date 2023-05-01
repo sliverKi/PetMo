@@ -30,17 +30,17 @@ class CommentSerializers(ModelSerializer):
             "pk",
             "parent_comment",
             "post",  
-            "user",
+            "comment_author",
             "content",
-            "created_at",
-            "updated_at"
+            "createdDate",
+            "updatedDate"
         ) 
 # class CommentDetailSerializers(ModelSerializer):
 #     class Meta:
 #         model=Comment
 #         fields='__all__'
 class ReplySerializers(ModelSerializer):
-    replies=serializers.SerializerMethodField()
+    children=serializers.SerializerMethodField()
     
     class Meta:
         model=Comment
@@ -48,18 +48,18 @@ class ReplySerializers(ModelSerializer):
             "id",
             "parent_comment",
             "post",  
-            "user",
+            "comment_author",
             "content",
-            "created_at",
-            "updated_at",
-            "replies"
+            "createdDate",
+            "updatedDate",
+            "children"
         )
 
     def get_replies(self, obj):
-        replies=Comment.objects.filter(parent_comment=obj.id).order_by('created_at')
-        if not replies.exists():
+        children=Comment.objects.filter(parent_comment=obj.id).order_by('createdDate')
+        if not children.exists():
             return None
-        serializer=ReplySerializers(replies, many=True,)
+        serializer=ReplySerializers(children, many=True,)
         return serializer.data
     
     def get_coments_count(self, obj):
@@ -75,30 +75,30 @@ class TinyPostSerializers(ModelSerializer):#좋아요 기능에서 이용
             "pk",
             "content",
             "Image",
-            "created_at",
-            "like_count"#게시글 좋아요 수 
+            "createdDate",
+            "likeCount"#게시글 좋아요 수 
             )
 class PostSerializers(ModelSerializer):#댓글 없음.
-    category=BoardSerializers(many=True, read_only=True)
-    pet_category=PetsSerializers(many=True, read_only=True)
+    categoryType=BoardSerializers(many=True, read_only=True)
+    boardAnimalTypes=PetsSerializers(many=True, read_only=True)
     user=TinyUserSerializers(read_only=True)
     Image=ImageSerializers(many=True, read_only=True, required=False)
-    is_like=serializers.SerializerMethodField()#현재 사용자가 게시글을 좋아요 했는지를 여부를 나타냄
+    likeCheck=serializers.SerializerMethodField()#현재 사용자가 게시글을 좋아요 했는지를 여부를 나타냄
     
     class Meta:
         model=Post
         fields=(
             "pk",
-            "category",
-            "pet_category",
+            "categoryType",
+            "boardAnimalTypes",
             "user",
             "content",
             "Image",#ImageModel의 relatedname 이용 
-            "like_count",
-            "is_like"
+            "likeCount",
+            "likeCheck"
         )
 
-    def get_is_like(self, data):
+    def get_likeCheck(self, data):
         request=self.context.get("request")
         if request and request.user.is_authenticated:
             return PostLike.objects.filter(user=request.user, post=data).exists()
@@ -106,18 +106,21 @@ class PostSerializers(ModelSerializer):#댓글 없음.
 
     
     def create(self, validated_data):  
-        #input data: {"content":"test post", "pet_category":["cat"], "Image":[], "category":"Review"}        
-        category_data=validated_data.pop("category", None)
-        pet_category_data=validated_data.pop("pet_category", None)
+        #{"content":"test post", "boardAnimalTypes":["강아지"], "Image":[], "categoryType":"장소후기"}   
+        #input data: {"content":"test post", "boardAnimalTypes":["cat"], "Image":[], "category":"Review"}        
+        category_data=validated_data.pop("categoryType", None)
+        print("category_data: ", category_data)
+        pet_category_data=validated_data.pop("boardAnimalTypes", None)
+        print("pet_: ", pet_category_data)
         image_data = validated_data.pop("Image", None)#값 없으면 None
         try:
             with transaction.atomic():
                 post = Post.objects.create(**validated_data)
                 if category_data:
                     for i in Category.objects.all():
-                        print(i.type)
-                    category=Category.objects.filter(type=category_data).first()
-                    post.category=category
+                        print(i.categoryType)
+                    categoryType=Category.objects.filter(categoryType=category_data).first()
+                    post.categoryType=categoryType
                     post.save()
 
                 if image_data:
@@ -134,10 +137,10 @@ class PostSerializers(ModelSerializer):#댓글 없음.
                     if isinstance(pet_category_data, list):
                         for pet_category in pet_category_data:
                             pet_category = get_object_or_404(Pet,animalTypes=pet_category)
-                            post.pet_category.add(pet_category)
+                            post.boardAnimalTypes.add(pet_category)
                     else:
                         pet_category = get_object_or_404(Pet, animalTypes=pet_category_data)
-                        post.pet_category.add(pet_category)
+                        post.boardAnimalTypes.add(pet_category)
                 else:
                     raise ParseError({"error": "잘못된 형식입니다."})
         
@@ -156,23 +159,23 @@ class PostSerializers(ModelSerializer):#댓글 없음.
 
 class PostListSerializers(ModelSerializer):#간략한 정보만을 보여줌
     user=TinyUserSerializers(read_only=True)
-    pet_category=PetsSerializers(many=True)
-    category=BoardSerializers()
+    boardAnimalTypes=PetsSerializers(many=True)
+    categoryType=BoardSerializers()
     Image=ImageSerializers(many=True, read_only=True, required=False)
     comments_count=serializers.SerializerMethodField()
     class Meta:
         model=Post
         fields=(
             "pk",
-            "category",
-            "pet_category",
+            "categoryType",
+            "boardAnimalTypes",
             "user",
             "content",
             "Image",
-            "created_at", 
-            "updated_at",
-            "watcher",#조회수
-            "like_count",#좋아요 수 
+            "createdDate", 
+            "updatedDate",
+            "viewCount",#조회수
+            "likeCount",#좋아요 수 
             "comments_count"#댓글 수 (대댓글 미포함)
         )
     def get_images(self, post):
@@ -186,29 +189,29 @@ class PostListSerializers(ModelSerializer):#간략한 정보만을 보여줌
     
 class PostDetailSerializers(ModelSerializer):#image 나열
     user=TinyUserSerializers()
-    pet_category=PetsSerializers(many=True)
-    category=BoardSerializers()
+    boardAnimalTypes=PetsSerializers(many=True)
+    categoryType=BoardSerializers()
     Image=ImageSerializers(many=True, read_only=True, required=False)
-    is_like=serializers.SerializerMethodField()
+    likeCheck=serializers.SerializerMethodField()
     comments_count=serializers.SerializerMethodField()
     class Meta:
         model=Post
         fields=(
             "id",
-            "category",
-            "pet_category",
+            "categoryType",
+            "boardAnimalTypes",
             "user", 
             "content",
             "Image",
-            "created_at",
-            "updated_at",    
-            "watcher",# 조회수 
-            "like_count",# 좋아요 수
-            "is_like",#좋아요 토글
+            "createdDate",
+            "updatedDate",    
+            "viewCount",# 조회수 
+            "likeCount",# 좋아요 수
+            "likeCheck",#좋아요 토글
             "comments_count"#댓글 수 
         )
     
-    def get_is_like(self, data):
+    def get_likeCheck(self, data):
         request = self.context.get("request")
         if request:
             if request.user.is_authenticated:
@@ -219,25 +222,23 @@ class PostDetailSerializers(ModelSerializer):#image 나열
     
     #{ update()-put()
     #"content": "test",
-    #"category": {"type": "Free"},
-    #"pet_category": [{"animalTypes": "cat"}, {"animalTypes":"dog"}, {"animalTypes":"fish"}]
+    #"categoryType": {"categoryType": "반려고수"},
+    #"boardAnimalTypes": [{"animalTypes": "강아지"}, {"animalTypes":"햄스터"}, {"animalTypes":"기타"}]
     #}
     # image : 다중 이미지 만들기. 
     def update(self, instance, validated_data):
         
-        instance.pet_category.clear()
-        pet_category_data = validated_data.pop("pet_category", None)
-        category_data = validated_data.pop("category", None)
+        instance.boardAnimalTypes.clear()
+        pet_category_data = validated_data.pop("boardAnimalTypes", None)
+        category_data = validated_data.pop("categoryType", None)
         
         # image_data = validated_data.pop("Image", None)
   
         if category_data:
-            category_instance = Category.objects.filter(type=category_data.get("type")).first()
-            print("a: ", category_instance)
-            
+            category_instance = Category.objects.filter(categoryType=category_data.get("categoryType")).first()
             if not category_instance:
                 raise serializers.ValidationError({"category": "Invalid category"})
-            instance.category = category_instance
+            instance.categoryType = category_instance
 
         # Update the remaining fields
         instance = super().update(instance, validated_data)
@@ -248,7 +249,7 @@ class PostDetailSerializers(ModelSerializer):#image 나열
                 animalTypes = pet_category.get("animalTypes")
                 if animalTypes:
                     pet_category, _ = Pet.objects.get_or_create(animalTypes=animalTypes)
-                    instance.pet_category.add(pet_category)
+                    instance.boardAnimalTypes.add(pet_category)
         
         # if image_data is not None:
         #     for i, image in enumerate(image_data):

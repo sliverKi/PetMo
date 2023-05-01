@@ -3,8 +3,8 @@ from django.db import models
 class Pet(models.Model):
     
     class AnimalSpeciesChoices(models.TextChoices):
-        고양이="고양이","고양이"
         강아지="강아지", "강아지"
+        고양이="고양이","고양이"
         물고기="물고기","물고기"
         햄스터="햄스터","햄스터"
         파충류="파충류","파충류"

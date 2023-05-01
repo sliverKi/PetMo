@@ -25,11 +25,11 @@ class Post(CommonModel):
     #     # on_delete=models.SET_NULL,
     #     related_name="posts",
     # )
-    pet_category=models.ManyToManyField(
+    boardAnimalTypes=models.ManyToManyField(
         "pets.Pet",
         related_name="posts"
     )
-    category=models.ForeignKey(
+    categoryType=models.ForeignKey(
         "categories.Category",
         on_delete=models.SET_NULL,
         blank=True,
@@ -37,14 +37,14 @@ class Post(CommonModel):
         related_name="posts",
     )
 
-    watcher=models.PositiveIntegerField( # 조회수
+    viewCount=models.PositiveIntegerField( # 조회수
         default=0,
         editable=False,
     )
 
 
     @property
-    def like_count(self):
+    def likeCount(self):
         return self.postlike.count()
     
     
