@@ -3,7 +3,7 @@ from django.conf import settings
 from config.settings import KAKAO_API_KEY, GOOGLE_MAPS_API_KEY
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .serializers import TinyUserSerializers, PrivateUserSerializers, AddressSerializers
+from .serializers import TinyUserSerializers, PrivateUserSerializers, AddressSerializers, UserSerializers
 from rest_framework import status
 from rest_framework.exceptions import ParseError, NotFound
 import requests
@@ -11,6 +11,14 @@ from pets.models import Pet
 from posts.models import Post, Comment
 from posts.serializers import PostListSerializers, CommentSerializers, ReplySerializers
 from .models import User
+
+class StaticInfo(APIView):
+    def get(self, request):
+        user=request.user
+        serializer=UserSerializers(user)
+        return Response(serializer.data)
+
+
 class MyPost(APIView):  
 
     def get(self, request):

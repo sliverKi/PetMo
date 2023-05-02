@@ -15,7 +15,7 @@ from categories.serializers import BoardSerializers
 from pets.models import Pet
 from pets.serializers import PetsSerializers
 from likes.models import PostLike
-
+from bookmarks.models import Bookmark
 
 import sys
 
@@ -95,7 +95,7 @@ class PostSerializers(ModelSerializer):#댓글 없음.
             "content",
             "Image",#ImageModel의 relatedname 이용 
             "likeCount",
-            "likeCheck"
+            "likeCheck",
         )
 
     def get_likeCheck(self, data):
@@ -162,7 +162,7 @@ class PostListSerializers(ModelSerializer):#간략한 정보만을 보여줌
     boardAnimalTypes=PetsSerializers(many=True)
     categoryType=BoardSerializers()
     Image=ImageSerializers(many=True, read_only=True, required=False)
-    comments_count=serializers.SerializerMethodField()
+    commentCount=serializers.SerializerMethodField()
     class Meta:
         model=Post
         fields=(
@@ -176,15 +176,16 @@ class PostListSerializers(ModelSerializer):#간략한 정보만을 보여줌
             "updatedDate",
             "viewCount",#조회수
             "likeCount",#좋아요 수 
-            "comments_count"#댓글 수 (대댓글 미포함)
+            "commentCount",#댓글 수 (대댓글 미포함)
+            "bookmarkCount",
         )
     def get_images(self, post):
         images = post.images.all()
         if images.exists():
             return ImageSerializers(images.first(), context=self.context).data   
         return [] 
-    def get_comments_count(self, obj):
-        return obj.comments_count
+    def get_commentCount(self, obj):
+        return obj.commentCount
     
     
 class PostDetailSerializers(ModelSerializer):#image 나열
@@ -193,7 +194,8 @@ class PostDetailSerializers(ModelSerializer):#image 나열
     categoryType=BoardSerializers()
     Image=ImageSerializers(many=True, read_only=True, required=False)
     likeCheck=serializers.SerializerMethodField()
-    comments_count=serializers.SerializerMethodField()
+    commentCount=serializers.SerializerMethodField()
+    bookmarkCheck=serializers.SerializerMethodField()
     class Meta:
         model=Post
         fields=(
@@ -208,7 +210,9 @@ class PostDetailSerializers(ModelSerializer):#image 나열
             "viewCount",# 조회수 
             "likeCount",# 좋아요 수
             "likeCheck",#좋아요 토글
-            "comments_count"#댓글 수 
+            "commentCount",#댓글 수 
+            "bookmarkCheck",#북마크 토글
+            "bookmarkCount",#북마크 수
         )
     
     def get_likeCheck(self, data):
@@ -217,8 +221,15 @@ class PostDetailSerializers(ModelSerializer):#image 나열
             if request.user.is_authenticated:
                 return PostLike.objects.filter(user=request.user,post__pk=data.pk).exists()
         return False
-    def get_comments_count(self, obj):
-        return obj.comments_count
+    
+    def get_commentCount(self, obj):
+        return obj.commentCount
+    
+    def get_bookmarkCheck(self, data):
+        request=self.context.get("request")
+        if request and request.user.is_authenticated:
+            return Bookmark.objects.filter(user=request.user, post=data).exists()
+        return False
     
     #{ update()-put()
     #"content": "test",

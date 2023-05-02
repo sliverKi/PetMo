@@ -20,6 +20,14 @@ CORS_ALLOW_CREDENTIALS = True
 
 CORS_ORIGIN_ALLOW = True
 
+CORS_ALLOWED_ORIGINS = ["http://127.0.0.1:3000", 'http://localhost:3000']
+
+CSRF_TRUSTED_ORIGINS = ["http://127.0.0.1:3000","http://localhost:3000","http://127.0.0.1:8000","http://localhost:8000" ]
+
+# CORS_ORIGIN_WHITELIST = ['http://127.0.0.1:3000','http://localhost:3000']
+
+CORS_ALLOW_ALL_ORIGINS = True
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
@@ -35,6 +43,8 @@ THIRD_PARTY_APPS=[
     "rest_framework_simplejwt.token_blacklist",
     "dj_rest_auth",
     "dj_rest_auth.registration",
+    "corsheaders",
+
 ]
 CUSTOM_APPS=[
     "users.apps.UsersConfig",
@@ -69,6 +79,7 @@ AUTHENTICATION_BACKENDS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    "corsheaders.middleware.CorsMiddleware",
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -109,21 +120,17 @@ DATABASES = {
 
 REST_FRAMEWORK={
     # 'DEFAULT_PERMISSION_CLASSES': (#api 접근시에 인증된 유저(헤더에 access-tocken을 포함하여 유효한 유저만이 접근이 가능하게 함)
-        # 'rest_framework.permissions.IsAuthenticated',
+    #     'rest_framework.permissions.IsAuthenticated',
     # ),
     'DEFAULT_AUTHENTICATION_CLASSES':(
         # 'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
-        # 'rest_framework_simplejwt.authentication.JWTAuthentication',
+       
     )
 }
-SIMPLE_JWT={
-    'ACCESS_TOCKEN_LIFETIME':timedelta(minutes=5),#유효시간 설정 
-    'REFRESH_TOCKEN_LIFETIME':timedelta(days=1),#유효시간 설정 
-    'ROTATE_REFRESH_TOCKEN':True, #token재발급 관련 설정
-    'BLACKLIST_AFTER_ROTATION':True,#token 무효화
-    
-}
+
+
+
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 

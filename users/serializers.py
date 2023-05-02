@@ -7,6 +7,23 @@ from pets.models import Pet
 
 
 
+class UserSerializers(ModelSerializer):
+    class Meta:
+        model=User
+        fields=(
+            "pk", 
+            "username", 
+            "email",
+            "password", 
+            "profile", 
+            "address", 
+            "hasPet",
+            "first",
+            "pets",
+            "is_staff",
+            "is_active",
+            "dated_joined",
+            )
 class TinyUserSerializers(ModelSerializer):
     #user 정보 : username, profile, pets, region,/ 작성 글(게시글, [댓글, 대댓글]이 있는 게시글)
     pets= PetsSerializers(many=True)
@@ -15,7 +32,13 @@ class TinyUserSerializers(ModelSerializer):
 
     class Meta:
         model=User
-        fields=("username","profile","pets","regionDepth2","regionDepth3")
+        fields=(
+            "username",
+            "profile",
+            "pets",
+            "regionDepth2",
+            "regionDepth3",
+        )
 
 class AddressSerializers(serializers.ModelSerializer):
     user=TinyUserSerializers(read_only=True)
@@ -83,8 +106,4 @@ class PrivateUserSerializers(ModelSerializer):
 
 
 
-class UserSerializers(ModelSerializer):
-    class Meta:
-        model=User
-        fields="__all__"
 

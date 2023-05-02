@@ -3,6 +3,7 @@ from django.urls import path
 from . import views 
 
 urlpatterns=[
+    path("static-info", views.StaticInfo.as_view()),
     path("MY/Post", views.MyPost.as_view()), #user작성한 게시글 조회[GET]
     path("MY/Comment", views.MyComment.as_view()),#user작성한 댓글 조회[GET]
     path("EditMe", views.EditMe.as_view()), #user profile 수정 [GET, PUT](ok) 

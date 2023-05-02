@@ -12,6 +12,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
 from rest_framework.exceptions import NotFound, ParseError
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
 
 from users.models import User
 from users.serializers import UserSerializers
@@ -19,6 +21,7 @@ from users.serializers import UserSerializers
 import requests
 
 class LogIn(APIView):
+
     def post(self, request, format=None):
         email=request.data.get('email')
         password=request.data.get('password')
@@ -35,17 +38,20 @@ class LogIn(APIView):
         user=authenticate(email=email, password=password)
         if user is not None:
             login(request, user)
-            # refresh=self.get_token(self.user)
-            refresh=RefreshToken.for_user(user)
+            serializer=UserSerializers(user)
+        
+            
             token = {
-                "refresh": str(refresh),
-                "access": str(refresh.access_token),#access token 생성
-                "user_id":user.id,
-                "user_email":user.email,
-                "username":user.username,
+                # "refresh": str(refresh),
+                # "access": str(refresh.access_token),#access token 생성
+                # "user_id":user.id,
+                # "user_email":user.email,
+                # "username":user.username,
+                "user":serializer.data,
             } 
+
             return Response(token, status=status.HTTP_200_OK)
-        # if user is not None:
+        #  if user is not None:
         #     login(request, user)
         #     serializer=UserSerializers(user)
         #     # refresh=self.get_token(self.user)

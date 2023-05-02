@@ -49,9 +49,12 @@ class Post(CommonModel):
     
     
     @property
-    def comments_count(self):
+    def commentCount(self):
         return self.post_comments.filter(parent_comment=None).count()
- 
+    
+    @property
+    def bookmarkCount(self):
+        return self.bookmarks.count()
     
     def __str__(self):
         return f"{self.user} - {self.content}"

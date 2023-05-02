@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
@@ -8,7 +8,18 @@ from .serializers import  BookmarkSerializers
 
 from posts.models import Post, Comment
 from posts.serializers import PostDetailSerializers, ReplySerializers
+
+def bookmarkCheck(user, post):
+   
+    if Bookmark.objects.filter(user=user, post=post).exists():
+        Bookmark.objects.filter(user=user, post=post).delete()
+        return False
+    else:
+        Bookmark.objects.create(user=user, post=post)
+        return True
+    
 class Bookmarks(APIView):
+    
     def get_object(self, pk):
         try:
             return Post.objects.get(pk=pk)
@@ -24,30 +35,16 @@ class Bookmarks(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     def post(self, request):
-        #input data : {"post":3}
-        post=self.get_object(request.data.get("post"))
-        serializer=BookmarkSerializers(data=request.data)
-        if serializer.is_valid():
-            if Bookmark.objects.filter(
-                user=request.user,
-                post=post
-            ).exists():
-                Bookmark.objects.filter(
-                    user=request.user,
-                    post=post
-                ).delete()    
-                return Response({"ok":"delete success"}, status=status.HTTP_202_ACCEPTED)
-            
-            else:
-                bookmark=serializer.save(
-                user=request.user,
-                post=post
-            )
-            serializer=BookmarkSerializers(bookmark)
-            return Response({"ok": "create success"}, status=status.HTTP_201_CREATED)
-        else: return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+        post = self.get_object(request.data.get("post"))
 
+        if bookmarkCheck(request.user, post):
+            return Response({"ok": "create success"}, status=status.HTTP_201_CREATED)
+        else:
+            return Response({"ok": "delete success"}, status=status.HTTP_202_ACCEPTED)
+        
+
+
+    
 class MarkDetail(APIView):
     def get_object(self, pk):
         try:
@@ -74,7 +71,3 @@ class MarkDetail(APIView):
             status=status.HTTP_200_OK
         )
     
-
-
-        
-
