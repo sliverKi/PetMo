@@ -36,13 +36,14 @@ class User(AbstractUser):
         related_name="users"
     )
     hasPet=models.BooleanField(default=False)
-    first=models.BooleanField(default=False)
-    
     pets=models.ManyToManyField(
         "pets.Pet",
         blank=True,
         related_name="user_pets"
     )
+
+    first=models.BooleanField(default=True)
+
     is_staff = models.BooleanField(
         _("staff status"),
         default=False,

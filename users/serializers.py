@@ -4,26 +4,6 @@ from rest_framework.exceptions import ParseError,ValidationError
 from .models import User, Address
 from pets.serializers import PetsSerializers
 from pets.models import Pet
-
-
-
-class UserSerializers(ModelSerializer):
-    class Meta:
-        model=User
-        fields=(
-            "pk", 
-            "username", 
-            "email",
-            "password", 
-            "profile", 
-            "address", 
-            "hasPet",
-            "first",
-            "pets",
-            "is_staff",
-            "is_active",
-            "dated_joined",
-            )
 class TinyUserSerializers(ModelSerializer):
     #user 정보 : username, profile, pets, region,/ 작성 글(게시글, [댓글, 대댓글]이 있는 게시글)
     pets= PetsSerializers(many=True)
@@ -39,8 +19,7 @@ class TinyUserSerializers(ModelSerializer):
             "regionDepth2",
             "regionDepth3",
         )
-
-class AddressSerializers(serializers.ModelSerializer):
+class AddressSerializers(serializers.ModelSerializer):#내동네 설정시 이용
     user=TinyUserSerializers(read_only=True)
     class Meta:
         model = Address
@@ -52,10 +31,43 @@ class AddressSerializers(serializers.ModelSerializer):
             "regionDepth2",
             "regionDepth3",
         )
+        extra_kwargs = {"regionDepth3":{"required":False}}#필수 필드가 아닌 선택적 필드로 변경 
+            
     #주소 전체를 입력하지 않았을 경우 ~> 전체 주소를 입력해주세요.
     #시도 단위를 입력하지 않았을 경우 ~> 시도 단위 주소를 입력해주세요.
     #구 단위를 입력하지 않았을 경우 ~> 구 단위 주소를 입력해주세요.
+class AddressSerializer(ModelSerializer):#유저 정적 정보 조회시 이용
+    class Meta:
+        model=Address
+        fields=(
+            "addressName",
+            "regionDepth1", 
+            "regionDepth2",
+            "regionDepth3",
+        )
+class UserSerializers(ModelSerializer):#정적 정보 조회시 이용
+    user_address=AddressSerializer()
+    class Meta:
+        model=User
+        fields=(
+            "pk", 
+            "username", 
+            "email",
+            "password", 
+            "profile", 
+            "user_address", #역참조
+            "hasPet",
+            "pets",
+            "first",
+        )
 
+
+
+class PublicUserSerializer(ModelSerializer):
+    class Meta:
+        model=User
+        fields=(
+            "")
 class PrivateUserSerializers(ModelSerializer):
     pets=PetsSerializers(many=True)
     regionDepth2=serializers.CharField(source="user_address.regionDepth2", read_only=True)
@@ -104,6 +116,14 @@ class PrivateUserSerializers(ModelSerializer):
     
 
 
+class EnrollPetSerailzer(ModelSerializer):
+    pets=PetsSerializers()
+    class Meta:
+        model=User
+        fields=(
+            "username",
+            "pets",
+        )
 
 
 

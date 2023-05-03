@@ -7,8 +7,13 @@ urlpatterns=[
     path("MY/Post", views.MyPost.as_view()), #user작성한 게시글 조회[GET]
     path("MY/Comment", views.MyComment.as_view()),#user작성한 댓글 조회[GET]
     path("EditMe", views.EditMe.as_view()), #user profile 수정 [GET, PUT](ok) 
-    path("getIP", views.getIP.as_view()), #user 현 위치의 동네 조회, 동네 설정[GET, POST] +)+)동네 재설정 추가, 동네 삭제[PUT]
-    path("getQuery", views.getQuery.as_view()), #검색어 기반 동네 조회 +) 검색어 기반 동네 검색, 동네 설정, 수정
+    
+    # path("address/", views.getAddress.as_view()),#[POST, PUT, DELETE] 사용자가 등록한 동네 조회, 삭제, POST] +)+)동네 재설정 추가, 동네 삭제[PUT]
+    path("address/get/ip", views.getIP.as_view()), #user 현 위치의 동네 조회[GET]
+    path("address/get/query", views.getQuery.as_view()), #검색어 기반 동네 조회 [GET]
 
-    # path("resetRegion", views.ReSet.as_view()), #동네 재 설정 [GET, POST]
+    # path("animals/", views.getPets.as_view())#[POST, PUT, DELETE]
+    # path("withdrawal", views.Quit.as_view())[DELETE]
 ]
+
+#처리된 url 손봐야 함.

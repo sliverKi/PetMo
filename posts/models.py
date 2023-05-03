@@ -18,13 +18,6 @@ class Post(CommonModel):
         blank=True,
         null=True,
     )
-    # comments=models.ManyToManyField(
-    #     "posts.Comment",
-    #     blank=True,
-    #     null=True,
-    #     # on_delete=models.SET_NULL,
-    #     related_name="posts",
-    # )
     boardAnimalTypes=models.ManyToManyField(
         "pets.Pet",
         related_name="posts"
@@ -36,17 +29,14 @@ class Post(CommonModel):
         null=True,
         related_name="posts",
     )
-
     viewCount=models.PositiveIntegerField( # 조회수
         default=0,
         editable=False,
     )
 
-
     @property
     def likeCount(self):
         return self.postlike.count()
-    
     
     @property
     def commentCount(self):

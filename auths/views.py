@@ -15,11 +15,13 @@ from rest_framework.exceptions import NotFound, ParseError
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 
+from .serializers import RegisterSerializers
 from users.models import User
 from users.serializers import UserSerializers
 
 import requests
 
+# {"email":"momo@gmail.com", "password":"momo"}
 class LogIn(APIView):
 
     def post(self, request, format=None):
@@ -28,48 +30,31 @@ class LogIn(APIView):
         
         try:
             user = User.objects.get(email=email)
-            print(user)
+            
         except User.DoesNotExist:
             raise NotFound
         
         if not email or not password:
-           return Response({"error":"이메일과비밀번호를 입력해주세요."}, status=status.HTTP_400_BAD_REQUEST)
+           return Response({"error":"이메일과 비밀번호를 입력해주세요."}, status=status.HTTP_400_BAD_REQUEST)
         
-        user=authenticate(email=email, password=password)
-        if user is not None:
+        if not user.is_active:
+            return Response({"error":"이미 탈퇴한 회원입니다."}, status=status.HTTP_404_NOT_FOUND)
+        
+        if user.check_password(password):
+            user.is_first==False
             login(request, user)
             serializer=UserSerializers(user)
-        
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response({"error":"이메일 또는 비밀번호를 확인해주세요."}, status=status.HTTP_400_BAD_REQUEST)
             
-            token = {
-                # "refresh": str(refresh),
-                # "access": str(refresh.access_token),#access token 생성
-                # "user_id":user.id,
-                # "user_email":user.email,
-                # "username":user.username,
-                "user":serializer.data,
-            } 
+class LogOut(APIView):
+    permission_classes=[IsAuthenticated]#전부 다 인증된 사용자에게만 권한 허용
 
-            return Response(token, status=status.HTTP_200_OK)
-        #  if user is not None:
-        #     login(request, user)
-        #     serializer=UserSerializers(user)
-        #     # refresh=self.get_token(self.user)
-        #     refresh=RefreshToken.for_user(user)
-            
-        #     refresh_token: str(refresh)
-        #     access_token: str(refresh.access_token)#access token 생성
-        #     # request.session["refresh_token"]=refresh_token
-        #     # request.session["access_token"]=access_token
-            
-        #     res = Response({
-        #         "user":serializer.data,
-        #         "success":"Login Success!",
-        #     }, status=status.HTTP_200_OK)
-        #     return Response(res)
-        else:
-            return Response({"error":"Invalid Credentials"}, status=status.HTTP_400_BAD_REQUEST)
-        
+    def post(self, request):
+        logout(request)
+        return Response({"success":"Success logout! :) See you!"}, status=status.HTTP_200_OK)
+    
+"""
 class TokenBlack(APIView):
     def post(self, request):
        
@@ -97,33 +82,27 @@ class TokenBlack(APIView):
                 return Response({'error': 'Token not found.'}, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({'error': 'Refresh token is not provided.'}, status=status.HTTP_400_BAD_REQUEST)
-       
-# {"email":"momo@gmail.com", "password":"momo"}
+"""       
 
-class LogOut(APIView):
-    def post(self, request):
-        refresh_token=request.data.get("refresh")
-        print("refresh_token: ", refresh_token)
-        try:
-            print(request.auth)
-            token = RefreshToken(refresh_token)
-            print("token: ", token)
-            print(dir(token))
-            token.blacklist()#token을 무효화 주석해제하면 로그아웃이 안됌,, =>>> 왜지???
-            logout(request)
-            return Response({"success":"Success LogOut!"}, status=status.HTTP_200_OK)
-        except Exception as e:
-            print(e)
-            return Response({"error":"LogOut Failed..."}, status=status.HTTP_406_NOT_ACCEPTABLE)        
 
 class Register(APIView):
-    def post(self, request, format=None):
-        serializer=UserSerializers(data=request.data)
+    
+    def get(self, request):
+        return Response({"회원가입"}, status=status.HTTP_200_OK)
+    
+    
+    def post(self, request, format=None):#privateUserSerializers
+        password=request.data.get("pasword")
+        if not password:
+            raise ParseError
+        serializer=RegisterSerializers(data=request.data)
         if serializer.is_valid():
             user=serializer.save()
-            refresh=RefreshToken.for_user(user)
-            token=str(refresh.access_token)
-            return Response({"token": token}, status=status.HTTP_201_CREATED)
+            user.set_password(password)
+            user.is_first==True
+            user.save()
+            serializer=RegisterSerializers(user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -169,9 +148,9 @@ class KakaoCallBack(APIView):
                 },
             )
             profile_json = profile_request.json()
-            # print(profile_request)
+            
             kakao_account =profile_json.get("kakao_account")
-            # print(kakao_account)
+            
             
             if email is None:
                 raise KakaoException()
@@ -181,8 +160,7 @@ class KakaoCallBack(APIView):
         except KeyError:
             return Response({"message": "INVALID_TOKEN"}, status=status.HTTP_400_BAD_REQUEST)
         
-        # except access_token.DoesNotExist:
-        #     return Response({"message": "INVALID_TOKEN"}, status=status.HTTP_400_BAD_REQUEST)
+       
         
         if User.objects.filter(email=email).exists():
             kakao_user = User.objects.get(email=email)

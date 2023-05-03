@@ -3,20 +3,30 @@ from django.conf import settings
 from config.settings import KAKAO_API_KEY, GOOGLE_MAPS_API_KEY
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .serializers import TinyUserSerializers, PrivateUserSerializers, AddressSerializers, UserSerializers
 from rest_framework import status
-from rest_framework.exceptions import ParseError, NotFound
+from rest_framework.exceptions import ParseError, NotFound, PermissionDenied
+from rest_framework.permissions import IsAuthenticated
+
 import requests
+
+from .models import User, Address
+from .serializers import (
+    TinyUserSerializers, PrivateUserSerializers, 
+    AddressSerializer, AddressSerializers, UserSerializers,
+    EnrollPetSerailzer
+    )
 from pets.models import Pet
 from posts.models import Post, Comment
 from posts.serializers import PostListSerializers, CommentSerializers, ReplySerializers
-from .models import User
-
 class StaticInfo(APIView):
+    permission_classes=[IsAuthenticated]#인가된 사용자만 허용
+
     def get(self, request):
         user=request.user
+        if not user.is_active:
+            return Response({"error":"세션이 만료되었거나 올바르지 않은 값입니다."})
         serializer=UserSerializers(user)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class MyPost(APIView):  
@@ -72,8 +82,62 @@ class EditMe(APIView):
         user.delete()
         return Response({"message": "계정이 삭제되었습니다."}, status=status.HTTP_204_NO_CONTENT)
 
+# class PublicUser(APIView):#다른 누군가의 프로필을 보고 싶은 경우 
+#     def get(self, request, username):
+#         try:
+#             User.objects.get(username=username)
+#         except User.DoesNotExist:
+#             raise NotFound   
+#         serializer=PublicUserSerializer(user)
+#         return Response(serializer.data) 
+
+class getAddress(APIView):#주소 등록 method 다 안됌 
+    # permission_classes=[IsAuthenticated]#인가된 사용자만 허용
+    def get_object(self, pk):
+        try:
+            User.objects.get(pk=pk)
+        except User.DoesNotExist:
+            raise NotFound     
+        
+    # def get(self, request):#현재 로그인한 user의 주소를 조회 
+    #     user=request.user
+    #     print(user)
+    #     user_address=Address.objects.filter(user=user)
+    #     print(user_address)
+    #     serializer= AddressSerializer(user_address)
+        
+    #     # serializer = AddressSerializers(user)
+    #     return Response(serializer.data, status=status.HTTP_200_OK) 
     
+    def post(self, request):#주소 등록 
+        print("post Start")
+        try:
+            user=request.user
+            print(user)
+            serializer = AddressSerializers(user, data=request.data,)
+            
+            if serializer.is_valid():
+                address=serializer.save(user=request.user)
+                return Response(AddressSerializers(address).data, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": "Failed to Save Address Data"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+    def put(self, request,pk):
+        pass
+    def delete(self, request):
+        user=request.user
+        print("user", user)
+        print(user.user_address)
+        if request.user!=user.user_address:
+            raise PermissionDenied("내 동네 삭제 권한이 없습니다.")
+        user.user_address.delete()
+        return Response(status=status.HTTP_200_OK)
+       
+
 class getIP(APIView):#ip기반 현위치 탐색
+    permission_classes=[IsAuthenticated]#인가된 사용자만 허용
+
     def get(self, request):
         try:
             client_ip_address  = request.META.get('HTTP_X_FORWARDED_FOR') or request.META.get('REMOTE_ADDR')#현재 접속 ip
@@ -117,8 +181,9 @@ class getIP(APIView):#ip기반 현위치 탐색
                 return Response({"error": "Failed to get geolocation data for IP address"}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({"error": "Failed to Load open API data."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
+    """
     def post(self, request):
+        
         try:
             user=request.user
             print(user)
@@ -129,8 +194,10 @@ class getIP(APIView):#ip기반 현위치 탐색
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({"error": "Failed to Save Address Data"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
+"""    
 class getQuery(APIView):#검색어 입력 기반 동네 검색
+    permission_classes=[IsAuthenticated]#인가된 사용자만 허용
+
     def get(self, request):
         
         # 1. 검색어 예외 처리 할 것 
@@ -157,18 +224,25 @@ class getQuery(APIView):#검색어 입력 기반 동네 검색
         
         return Response(datas, status=status.HTTP_200_OK)
 
-#동네 재 설정 todo 
-class ReSet(APIView):
-    def get_object(self, pk):
-        try:
-            return User.objects.get(pk=pk)
-        except User.DoesNotExist:
-            raise NotFound
 
-    def get(self, request):
-        #로그인한 유저의 현재 동네 설정 정보 가져오기 
-        pass
-    def put(self, request):
-        #동네 재 탐색 ~> 재 설정 
-        pass
+class getPets(APIView): #유저의 동물 등록
+    def post(self, request):
+        serializer=EnrollPetSerailzer(data=request.data)
+        print("re: ", request.data)
+        if serializer.is_valid():
+            animal=serializer.save(
+                user=request.user,
+                pets=request.data.get("pets"),
+            )
+            user.hasPet==True
+            
+            serializer=UserSerializers(
+                animal
+            )
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
 
