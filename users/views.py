@@ -244,7 +244,7 @@ class getQuery(APIView):#검색어 입력 기반 동네 검색
         return Response(datas, status=status.HTTP_200_OK)
 
 
-class getPets(APIView): #유저의 동물 등록
+class getPets(APIView): #유저의 동물 등록(ok)
     def get(self, request):
         user=request.user
         serializer = UserSerializers(user)
@@ -267,7 +267,25 @@ class getPets(APIView): #유저의 동물 등록
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+class Quit(APIView):
+    def get(self, request):
+        user=request.user
+        try:
+            serializer=UserSerializers(user)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except:
+            return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
     
+    def delete(self, request):
+        
+        user=request.user
+        password=request.data.get("password")
+        # 검사사항
+        #1. 유저가 입력한 비밀번호가 맞는지 확인 check_password(password, user.password)
+        #2. 유저가 작성한 게시글, 댓글, 대댓글 모두 삭제 
+        #3. 유저 정보 삭제 
+        
+
 
 
 
