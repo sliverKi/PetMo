@@ -130,25 +130,23 @@ class getAddress(APIView):#주소 등록 method 다 안됌
         except Exception as e:
             return Response({"error": "Failed to Save Address Data"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-    # def put(self, request, address_id):
-    #     user=request.user
-    #     try:
-    #         address=Address.objects.get(id=address_id, user=user)
+    def put(self, request):
+        user=request.user
         
-    #     except Address.DoesNotExist:
-    #         return Response({"error":"사용자가 설정한 내 동네가 없습니다."}, status=status.HTTP_404_NOT_FOUND)
+        if not user.user_address:
+            return Response(status=status.HTTP_404_NOT_FOUND)
         
-    #     serializer=AddressSerializer(
-    #         address=address,
-    #         data=request.data,
-    #         partial=True,
-    #     )
-    #     if serializer.is_valid():
-    #         user=serializer.save()
-    #         serializer=AddressSerializer(user)
-    #         return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
-    #     else:
-    #         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer=AddressSerializer(
+            user.user_address,
+            data=request.data,
+            partial=True,
+        )
+        if serializer.is_valid():
+            updated_address=serializer.save()
+            serializer=AddressSerializer(updated_address)
+            return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
     def delete(self, request):
         user=request.user
