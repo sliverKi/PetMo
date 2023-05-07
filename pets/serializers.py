@@ -9,7 +9,7 @@ class PetsSerializers(ModelSerializer):
         fields=("animalTypes",)
         read_only=False
 
-    def validate_species(self, animalTypes):
+    def validate_animalTypes(self, animalTypes):
         if not isinstance(animalTypes, str):
             raise ValidationError('유효한 동물 종류가 아닙니다.')
         return animalTypes

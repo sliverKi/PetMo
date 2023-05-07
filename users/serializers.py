@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
 from rest_framework.exceptions import ParseError,ValidationError
@@ -59,6 +60,7 @@ class AddressSerializer(ModelSerializer):#유저 정적 정보 조회시, 내 �
         )
 class UserSerializers(ModelSerializer):#정적 정보 조회시 이용
     user_address=AddressSerializer()
+    pets=PetsSerializers(many=True)
     class Meta:
         model=User
         fields=(
@@ -129,13 +131,36 @@ class PrivateUserSerializers(ModelSerializer):
 
 
 class EnrollPetSerailzer(ModelSerializer):
-    pets=PetsSerializers()
+    pets=PetsSerializers(many=True)
     class Meta:
         model=User
-        fields=(
-            "username",
-            "pets",
-        )
+        fields=("pets",)
+    
+    #input data
+    # {
+    #"pets": [
+    #    {"animalTypes": "강아지"},
+    #    {"animalTypes": "고양이"}
+    #   ]
+    # }
+    
+    def create(self, validated_data):
+        pets_data=validated_data.pop("pets", None) 
+        user = self.context["request"].user
+        
+        if len(pets_data)>3:
+            raise ValidationError("최대 3마리까지 등록이 가능합니다.")
+        
+        if isinstance(pets_data, list):
+            for pet_data in pets_data:
+                pet=get_object_or_404(Pet, animalTypes=pet_data["animalTypes"])
+                user.pets.add(pet)
+        else:
+            raise ValidationError()       
+        user.hasPet=True
+        user.save()
+        return user
+
 
 
 

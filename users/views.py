@@ -213,20 +213,7 @@ class getIP(APIView):#ip기반 현위치 탐색
                 return Response({"error": "Failed to get geolocation data for IP address"}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({"error": "Failed to Load open API data."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    """
-    def post(self, request):
-        
-        try:
-            user=request.user
-            print(user)
-            serializer = AddressSerializers(data=request.data,)
-            if serializer.is_valid():
-                address=serializer.save(user=request.user)
-                return Response(AddressSerializers(address).data, status=status.HTTP_201_CREATED)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return Response({"error": "Failed to Save Address Data"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-"""    
+   
 class getQuery(APIView):#검색어 입력 기반 동네 검색
     permission_classes=[IsAuthenticated]#인가된 사용자만 허용
 
@@ -258,22 +245,29 @@ class getQuery(APIView):#검색어 입력 기반 동네 검색
 
 
 class getPets(APIView): #유저의 동물 등록
+    def get(self, request):
+        user=request.user
+        serializer = UserSerializers(user)
+        return Response(serializer.data, status=status.HTTP_200_OK) 
+    
     def post(self, request):
-        serializer=EnrollPetSerailzer(data=request.data)
-        print("re: ", request.data)
+        user=request.user
+        
+        serializer=EnrollPetSerailzer(
+            data=request.data,
+            context={'request':request}
+        )
+
         if serializer.is_valid():
             animal=serializer.save(
                 user=request.user,
                 pets=request.data.get("pets"),
-            )
-            user.hasPet==True
-            
-            serializer=UserSerializers(
-                animal
-            )
+            )            
+            serializer=EnrollPetSerailzer(animal)
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+    
+    
 
 
 
