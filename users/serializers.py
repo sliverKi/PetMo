@@ -16,6 +16,7 @@ class TinyUserSerializers(ModelSerializer):
             "username",
             "profile",
             "pets",
+            "address",
             "regionDepth2",
             "regionDepth3",
         )
@@ -25,18 +26,29 @@ class AddressSerializers(serializers.ModelSerializer):#내동네 설정시 이�
         model = Address
         fields = (
             "id",
-            "user",
+            "user",#context={'user':user}
             "addressName",
             "regionDepth1", 
             "regionDepth2",
             "regionDepth3",
         )
         extra_kwargs = {"regionDepth3":{"required":False}}#필수 필드가 아닌 선택적 필드로 변경 
-            
+    def validate(self, attrs):
+        addressName=attrs.get("addressName")
+        regionDepth1=attrs.get("regionDepth1")
+        regionDepth2=attrs.get("regionDepth2")
+        if not addressName:
+            raise ValidationError("전체 주소를 입력해 주세요.")    
+        elif not regionDepth1:
+            raise ValidationError("시도 단위 주소를 입력해 주세요.")
+        elif not regionDepth2:
+                raise ValidationError("구 단위 주소를 입력해 주세요.")
+        else: 
+            return attrs     
     #주소 전체를 입력하지 않았을 경우 ~> 전체 주소를 입력해주세요.
     #시도 단위를 입력하지 않았을 경우 ~> 시도 단위 주소를 입력해주세요.
     #구 단위를 입력하지 않았을 경우 ~> 구 단위 주소를 입력해주세요.
-class AddressSerializer(ModelSerializer):#유저 정적 정보 조회시 이용
+class AddressSerializer(ModelSerializer):#유저 정적 정보 조회시, 내 동네 조회시 이용
     class Meta:
         model=Address
         fields=(

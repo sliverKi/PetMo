@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.conf import settings
 from config.settings import KAKAO_API_KEY, GOOGLE_MAPS_API_KEY
 from rest_framework.views import APIView
@@ -95,27 +95,30 @@ class getAddress(APIView):#주소 등록 method 다 안됌
     # permission_classes=[IsAuthenticated]#인가된 사용자만 허용
     def get_object(self, pk):
         try:
-            User.objects.get(pk=pk)
+            return User.objects.get(pk=pk)
         except User.DoesNotExist:
             raise NotFound     
         
-    # def get(self, request):#현재 로그인한 user의 주소를 조회 
-    #     user=request.user
-    #     print(user)
-    #     user_address=Address.objects.filter(user=user)
-    #     print(user_address)
-    #     serializer= AddressSerializer(user_address)
-        
-    #     # serializer = AddressSerializers(user)
-    #     return Response(serializer.data, status=status.HTTP_200_OK) 
+    def get(self, request):#현재 로그인한 user의 주소를 조회 
+        user=request.user
+        print(user)
+        user_address=Address.objects.filter(user=user).first()
+        print(user_address)
+        if user_address:
+            serializer = AddressSerializer(user_address)
+            return Response(serializer.data, status=status.HTTP_200_OK) 
+        else:
+            return Response({"error":"사용자가 아직 내동네 설정을 하지 않았습니다. "}, status=status.HTTP_404_NOT_FOUND)
     
     def post(self, request):#주소 등록 
         print("post Start")
         try:
             user=request.user
             print(user)
-            serializer = AddressSerializers(user, data=request.data,)
-            
+            serializer = AddressSerializers(
+                data=request.data, 
+                context={'user':user}#user 객체를 참조하기 위함. ~> serializer에서 사용자 정보가 필요하기 때문
+            )
             if serializer.is_valid():
                 address=serializer.save(user=request.user)
                 return Response(AddressSerializers(address).data, status=status.HTTP_201_CREATED)
