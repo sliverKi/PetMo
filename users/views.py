@@ -114,27 +114,58 @@ class getAddress(APIView):#주소 등록 method 다 안됌
         print("post Start")
         try:
             user=request.user
-            print(user)
             serializer = AddressSerializers(
                 data=request.data, 
                 context={'user':user}#user 객체를 참조하기 위함. ~> serializer에서 사용자 정보가 필요하기 때문
             )
             if serializer.is_valid():
                 address=serializer.save(user=request.user)
-                return Response(AddressSerializers(address).data, status=status.HTTP_201_CREATED)
+                address.addressName=request.data.get('addressName')
+                user.user_address=address
+                user.save()
+                serializer=AddressSerializers(address)
+                
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({"error": "Failed to Save Address Data"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-    def put(self, request,pk):
-        pass
+    # def put(self, request, address_id):
+    #     user=request.user
+    #     try:
+    #         address=Address.objects.get(id=address_id, user=user)
+        
+    #     except Address.DoesNotExist:
+    #         return Response({"error":"사용자가 설정한 내 동네가 없습니다."}, status=status.HTTP_404_NOT_FOUND)
+        
+    #     serializer=AddressSerializer(
+    #         address=address,
+    #         data=request.data,
+    #         partial=True,
+    #     )
+    #     if serializer.is_valid():
+    #         user=serializer.save()
+    #         serializer=AddressSerializer(user)
+    #         return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+    #     else:
+    #         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
     def delete(self, request):
         user=request.user
         print("user", user)
-        print(user.user_address)
-        if request.user!=user.user_address:
+        address_id = user.user_address.id
+        print(user.user_address.id)
+        
+        try:
+            address=Address.objects.get(id=address_id)
+        except Address.DoesNotExist:
+            return Response({"error":"해당 주소가 존재하지 않습니다."},status=status.HTTP_404_NOT_FOUND)    
+        
+        if request.user!=address.user:
             raise PermissionDenied("내 동네 삭제 권한이 없습니다.")
         user.user_address.delete()
+        user.user_address=None
+        user.save()
         return Response(status=status.HTTP_200_OK)
        
 
