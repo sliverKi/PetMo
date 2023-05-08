@@ -16,11 +16,22 @@ from .serializers import (
     )
 from .pagination import PaginaitionHandlerMixin
 
-class Comments(APIView):
+class CommentPagination(CursorPagination):
+    page_size=5
+    ordering='createdDate'#createdDate 기준으로 오름차순 정렬
+
+class Comments(APIView, PaginaitionHandlerMixin):
+    pagination_class=CommentPagination
 
     def get(self,request):
         all_comments=Comment.objects.filter(parent_comment=None)
-        serializer=ReplySerializers(all_comments, many=True)
+        page=self.paginate_queryset(all_comments)
+        if page is not None:
+            serializer=ReplySerializers(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        else:
+            serializer=ReplySerializers(all_comments, many=True)
+        # serializer=ReplySerializers(all_comments, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     def post(self, request):
@@ -99,7 +110,6 @@ class CommentDetail(APIView):# 댓글:  조회 생성, 수정, 삭제(ok)
             raise PermissionDenied
         comment.delete()
         return Response(status=status.HTTP_200_OK)
-
 
 
     
@@ -190,7 +200,8 @@ class PostDetail(APIView):#게시글의 자세한 정보(+댓글 포함)
     
 
                 
-
+#댓글 기준 5개 이상 -> pagination
+#대댓글 3개이상이면 아코디언 형식 적용 -> 댓글 5개, 대댓글 3개 pagination화 
 class PostComments(APIView):#게시글에 등록 되어진 댓글, 대댓글
     def get_object(self, pk):
         try:
@@ -216,7 +227,6 @@ class PostComments(APIView):#게시글에 등록 되어진 댓글, 대댓글
         # "user": 4,
         # "content": "댓글1"
         # }
-        
         content=request.data.get("content")
         post_id=request.data.get("post")
         parent_comment_id = request.data.get("parent_comment", None)#부모댓글 정보 #부모댓글 정보가 전달 되지 않을 경우, None할당(=댓글)
