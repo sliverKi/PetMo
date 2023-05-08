@@ -199,22 +199,22 @@ class PostDetail(APIView):#게시글의 자세한 정보(+댓글 포함)
         return Response(status=status.HTTP_200_OK)
     
 
-                
-#댓글 기준 5개 이상 -> pagination
-#대댓글 3개이상이면 아코디언 형식 적용 -> 댓글 5개, 대댓글 3개 pagination화 
-class PostComments(APIView):#게시글에 등록 되어진 댓글, 대댓글
+class PostComments(APIView, PaginaitionHandlerMixin ):#게시글에 등록 되어진 댓글, 대댓글
+    pagination_class=CommentPagination
     def get_object(self, pk):
         try:
             return Post.objects.get(pk=pk)
         except Post.DoesNotExist:
             raise NotFound
 
-    def get(slef, request, pk):
+    def get(self, request, pk):
         comments=Comment.objects.filter(parent_comment=None)
-        serializer=ReplySerializers(
-            comments, 
-            many=True,
-        )
+        page=self.paginate_queryset(comments)
+        if page is not None:
+            serializer=ReplySerializers(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        else:
+            serializer=ReplySerializers(comments, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     def post(self, request,pk):
         #예외 : 존재 하지 않는 게시글에 댓글 작성 불가
