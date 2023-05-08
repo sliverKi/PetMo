@@ -1,13 +1,14 @@
+import requests
 from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.hashers import check_password 
 from django.conf import settings
 from config.settings import KAKAO_API_KEY, GOOGLE_MAPS_API_KEY
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.exceptions import ParseError, NotFound, PermissionDenied
+from rest_framework.exceptions import ParseError, NotFound, PermissionDenied, ValidationError
 from rest_framework.permissions import IsAuthenticated
-
-import requests
 
 from .models import User, Address
 from .serializers import (
@@ -77,10 +78,10 @@ class EditMe(APIView):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    def delete(self, request):
-        user = request.user
-        user.delete()
-        return Response({"message": "계정이 삭제되었습니다."}, status=status.HTTP_204_NO_CONTENT)
+    # def delete(self, request):
+    #     user = request.user
+    #     user.delete()
+    #     return Response({"message": "계정이 삭제되었습니다."}, status=status.HTTP_204_NO_CONTENT)
 
 # class PublicUser(APIView):#다른 누군가의 프로필을 보고 싶은 경우 
 #     def get(self, request, username):
@@ -91,7 +92,7 @@ class EditMe(APIView):
 #         serializer=PublicUserSerializer(user)
 #         return Response(serializer.data) 
 
-class getAddress(APIView):#주소 등록 method 다 안됌 
+class getAddress(APIView):
     # permission_classes=[IsAuthenticated]#인가된 사용자만 허용
     def get_object(self, pk):
         try:
@@ -153,7 +154,6 @@ class getAddress(APIView):#주소 등록 method 다 안됌
         print("user", user)
         address_id = user.user_address.id
         print(user.user_address.id)
-        
         try:
             address=Address.objects.get(id=address_id)
         except Address.DoesNotExist:
@@ -244,12 +244,18 @@ class getQuery(APIView):#검색어 입력 기반 동네 검색
         return Response(datas, status=status.HTTP_200_OK)
 
 
-class getPets(APIView): #유저의 동물 등록(ok)
+class getPets(APIView): #유저의 동물 등록
     def get(self, request):
         user=request.user
         serializer = UserSerializers(user)
         return Response(serializer.data, status=status.HTTP_200_OK) 
-    
+    #input data
+    # {
+    #"pets": [
+    #    {"animalTypes": "강아지"},
+    #    {"animalTypes": "고양이"}
+    #   ]
+    # }
     def post(self, request):
         user=request.user
         
@@ -276,14 +282,28 @@ class Quit(APIView):
         except:
             return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
     
-    def delete(self, request):
-        
+   
+    def post(self, request):
+        #input data {"password":"xxx"}
         user=request.user
         password=request.data.get("password")
         # 검사사항
         #1. 유저가 입력한 비밀번호가 맞는지 확인 check_password(password, user.password)
         #2. 유저가 작성한 게시글, 댓글, 대댓글 모두 삭제 
         #3. 유저 정보 삭제 
+
+        if not check_password(password, user.password):
+            raise ValidationError("비밀번호가 일치하지 않습니다.")
+        
+        posts=Post.objects.filter(user=user)
+        posts.delete()
+
+        comments=Comment.objects.filter(user=user)
+        comments.delete()
+
+        user.delete()#db에서 user 삭제
+        request.session.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
         
 
 

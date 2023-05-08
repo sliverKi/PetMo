@@ -112,7 +112,7 @@ class Posts(APIView):#image test 해보기 - with front
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     def post(self, request):#게시글 생성
-  
+    #input data:{"content":"test post", "boardAnimalTypes":["강아지"], "Image":[], "categoryType":"장소후기"}   
         serializer=PostSerializers(data=request.data)
         print("re: ", request.data)
         
@@ -200,13 +200,12 @@ class PostComments(APIView):#게시글에 등록 되어진 댓글, 대댓글
         #예외 : 존재 하지 않는 게시글에 대댓글 작성 불가
         #에외 : 존재 하지 않는 댓글에 대댓글 작성 불가
         #input data:
-        """{
-                "id": 2,
-                "parent_comment": 1,
-                "post": 1,
-                "user": 2,
-                "content": "(대)댓글2"
-            }"""
+        # {
+        # "parent_comment": null,
+        # "post": 4,
+        # "user": 4,
+        # "content": "댓글1"
+        # }
         
         content=request.data.get("content")
         post_id=request.data.get("post")

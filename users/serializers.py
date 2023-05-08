@@ -136,13 +136,7 @@ class EnrollPetSerailzer(ModelSerializer):
         model=User
         fields=("pets",)
     
-    #input data
-    # {
-    #"pets": [
-    #    {"animalTypes": "강아지"},
-    #    {"animalTypes": "고양이"}
-    #   ]
-    # }
+    
     
     def create(self, validated_data):
         pets_data=validated_data.pop("pets", None) 

@@ -58,12 +58,13 @@ class MyUserAdmin(UserAdmin):
     )
     list_display = (
         "pk",
-        "email",
         "username",
+        "email",
         "hasPet",
         "address",
         "is_staff",
     )
+    list_display_links=('pk', 'username')
     list_filter = ("username",)
     search_fields = ("email", "username")
     ordering = ("username",)

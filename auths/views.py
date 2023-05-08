@@ -90,16 +90,16 @@ class Register(APIView):
     def get(self, request):
         return Response({"회원가입"}, status=status.HTTP_200_OK)
     
-    
+    #input data {"email":"moomoo@gmail.com", "username":"eungimoo", "password":"eungi"}
     def post(self, request, format=None):#privateUserSerializers
-        password=request.data.get("pasword")
+        password=request.data.get("password")
         if not password:
             raise ParseError
         serializer=RegisterSerializers(data=request.data)
         if serializer.is_valid():
             user=serializer.save()
             user.set_password(password)
-            user.is_first==True
+            user.is_first=True
             user.save()
             serializer=RegisterSerializers(user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)

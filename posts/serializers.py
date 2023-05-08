@@ -30,15 +30,12 @@ class CommentSerializers(ModelSerializer):
             "pk",
             "parent_comment",
             "post",  
-            "comment_author",
+            "user",
             "content",
             "createdDate",
             "updatedDate"
         ) 
-# class CommentDetailSerializers(ModelSerializer):
-#     class Meta:
-#         model=Comment
-#         fields='__all__'
+
 class ReplySerializers(ModelSerializer):
     children=serializers.SerializerMethodField()
     
@@ -48,14 +45,14 @@ class ReplySerializers(ModelSerializer):
             "id",
             "parent_comment",
             "post",  
-            "comment_author",
+            "user",
             "content",
             "createdDate",
             "updatedDate",
             "children"
         )
 
-    def get_replies(self, obj):
+    def get_children(self, obj):
         children=Comment.objects.filter(parent_comment=obj.id).order_by('createdDate')
         if not children.exists():
             return None
@@ -93,7 +90,7 @@ class PostSerializers(ModelSerializer):#댓글 없음.
             "boardAnimalTypes",
             "user",
             "content",
-            "Image",#ImageModel의 relatedname 이용 
+            "Image",#ImageModel의 related_name 이용 
             "likeCount",
             "likeCheck",
         )
@@ -106,8 +103,7 @@ class PostSerializers(ModelSerializer):#댓글 없음.
 
     
     def create(self, validated_data):  
-        #{"content":"test post", "boardAnimalTypes":["강아지"], "Image":[], "categoryType":"장소후기"}   
-        #input data: {"content":"test post", "boardAnimalTypes":["cat"], "Image":[], "category":"Review"}        
+        
         category_data=validated_data.pop("categoryType", None)
         print("category_data: ", category_data)
         pet_category_data=validated_data.pop("boardAnimalTypes", None)
@@ -177,7 +173,7 @@ class PostListSerializers(ModelSerializer):#간략한 정보만을 보여줌
             "viewCount",#조회수
             "likeCount",#좋아요 수 
             "commentCount",#댓글 수 (대댓글 미포함)
-            "bookmarkCount",
+            "bookmarkCount",#북마크 수
         )
     def get_images(self, post):
         images = post.images.all()
