@@ -17,6 +17,7 @@ django-multiupload = "^0.6.1"
 django-allauth = "^0.54.0"
 django-rest-auth = "^0.9.5"
 django-environ = "^0.10.0"
+drf-yasg = "^1.21.5"
 
 
 [build-system]

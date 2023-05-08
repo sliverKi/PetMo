@@ -5,19 +5,16 @@ from rest_framework.authentication import SessionAuthentication
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-
 from rest_framework.exceptions import NotFound, PermissionDenied, ParseError
-from categories.serializers import BoardSerializers
-from pets.serializers import PetsSerializers
+from rest_framework.pagination import CursorPagination
 
 from .models import Post, Comment
 from .serializers import (
     PostSerializers,
     PostListSerializers, PostDetailSerializers, 
-    CommentSerializers, #CommentDetailSerializers,
-    ReplySerializers, ImageSerializers
+    CommentSerializers, ReplySerializers
     )
-
+from .pagination import PaginaitionHandlerMixin
 
 class Comments(APIView):
 
@@ -103,12 +100,25 @@ class CommentDetail(APIView):# 댓글:  조회 생성, 수정, 삭제(ok)
         comment.delete()
         return Response(status=status.HTTP_200_OK)
 
-class Posts(APIView):#image test 해보기 - with front 
+
+
+    
+class PostPagination(CursorPagination):
+    page_size=10
+    ordering='-createdDate'#생성일 기준 내림차순정렬(5-4-3-2-1)        
+class Posts(APIView, PaginaitionHandlerMixin):#image test 해보기 - with front 
     # authentication_classes=[SessionAuthentication]
     # permission_classes=[IsAuthenticated]
-    def get(self, request):
+    pagination_class=PostPagination
+    
+    def get(self, request, format=None):
         all_posts=Post.objects.all()
-        serializer=PostListSerializers(all_posts, many=True)
+        page=self.paginate_queryset(all_posts)
+        if page is not None:
+            serializer=PostListSerializers(page,many=True)
+            return self.get_paginated_response(serializer.data)
+        else:
+            serializer=PostListSerializers(all_posts, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     def post(self, request):#게시글 생성

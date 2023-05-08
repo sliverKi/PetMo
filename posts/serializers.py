@@ -1,6 +1,7 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
+from rest_framework.pagination import CursorPagination
 from rest_framework.exceptions import ParseError, ValidationError
 from rest_framework.response import Response
 from rest_framework import status
@@ -183,7 +184,7 @@ class PostListSerializers(ModelSerializer):#간략한 정보만을 보여줌
     def get_commentCount(self, obj):
         return obj.commentCount
     
-    
+     
 class PostDetailSerializers(ModelSerializer):#image 나열
     user=TinyUserSerializers()
     boardAnimalTypes=PetsSerializers(many=True)

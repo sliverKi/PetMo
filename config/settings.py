@@ -37,6 +37,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 DEBUG = True
 
 THIRD_PARTY_APPS=[
+    "drf_yasg",
     "rest_framework",
     "rest_framework.authtoken",
     "rest_framework_simplejwt",
@@ -125,9 +126,13 @@ REST_FRAMEWORK={
     'DEFAULT_AUTHENTICATION_CLASSES':(
         # 'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
-       
-    )
+    ),
+    'DEFAULT_PAGINATION_CLASS':
+        'rest_framework.pagination.PageNumberPagination',
+        'PAGE_SIZE': 10,
 }
+
+
 
 
 

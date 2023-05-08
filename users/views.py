@@ -56,7 +56,7 @@ class MyComment(APIView):
             "user_comments": user_comments_serialized,
         }
         return Response(response_data, status=status.HTTP_200_OK)
-class EditMe(APIView):
+class MyInfo(APIView):
 
     def get(self, request):
         user=request.user
@@ -78,10 +78,7 @@ class EditMe(APIView):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    # def delete(self, request):
-    #     user = request.user
-    #     user.delete()
-    #     return Response({"message": "계정이 삭제되었습니다."}, status=status.HTTP_204_NO_CONTENT)
+   
 
 # class PublicUser(APIView):#다른 누군가의 프로필을 보고 싶은 경우 
 #     def get(self, request, username):
@@ -243,7 +240,6 @@ class getQuery(APIView):#검색어 입력 기반 동네 검색
         
         return Response(datas, status=status.HTTP_200_OK)
 
-
 class getPets(APIView): #유저의 동물 등록
     def get(self, request):
         user=request.user
@@ -251,7 +247,7 @@ class getPets(APIView): #유저의 동물 등록
         return Response(serializer.data, status=status.HTTP_200_OK) 
     #input data
     # {
-    #"pets": [
+    # "pets": [
     #    {"animalTypes": "강아지"},
     #    {"animalTypes": "고양이"}
     #   ]
@@ -290,7 +286,8 @@ class Quit(APIView):
         # 검사사항
         #1. 유저가 입력한 비밀번호가 맞는지 확인 check_password(password, user.password)
         #2. 유저가 작성한 게시글, 댓글, 대댓글 모두 삭제 
-        #3. 유저 정보 삭제 
+        #3. 유저 디비에서 삭제 
+        #4. 유저 세션 끊음
 
         if not check_password(password, user.password):
             raise ValidationError("비밀번호가 일치하지 않습니다.")
@@ -302,7 +299,7 @@ class Quit(APIView):
         comments.delete()
 
         user.delete()#db에서 user 삭제
-        request.session.delete()
+        request.session.delete()#session 끊음
         return Response(status=status.HTTP_204_NO_CONTENT)
         
 
