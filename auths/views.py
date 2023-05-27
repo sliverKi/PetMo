@@ -9,10 +9,8 @@ from rest_framework.permissions import AllowAny
 from rest_framework import status
 
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.tokens import AccessToken
-from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
 from rest_framework.exceptions import NotFound, ParseError
-from rest_framework.authentication import TokenAuthentication
+
 from rest_framework.permissions import IsAuthenticated
 
 from .serializers import RegisterSerializers
@@ -36,64 +34,31 @@ class LogIn(APIView):
         
         if not email or not password:
            return Response({"error":"이메일과 비밀번호를 입력해주세요."}, status=status.HTTP_400_BAD_REQUEST)
-        
-        if not user.is_active:
-            return Response({"error":"이미 탈퇴한 회원입니다."}, status=status.HTTP_404_NOT_FOUND)
-        
+       
         if user.check_password(password):
-            user.is_first==False
             login(request, user)
             serializer=UserSerializers(user)
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response({"error":"이메일 또는 비밀번호를 확인해주세요."}, status=status.HTTP_400_BAD_REQUEST)
             
 class LogOut(APIView):
-    permission_classes=[IsAuthenticated]#전부 다 인증된 사용자에게만 권한 허용
-
+    permission_classes=[IsAuthenticated]
     def post(self, request):
         logout(request)
         return Response({"success":"Success logout! :) See you!"}, status=status.HTTP_200_OK)
     
-"""
-class TokenBlack(APIView):
-    def post(self, request):
-       
-        refresh_token=request.data.get("refresh")
-        print("refresh_token: ", refresh_token)
-        if refresh_token:
-            print("111")
-            try:
-                token=RefreshToken(refresh_token)
-                print("token: ", token)
-                token.blacklist()#이전 refresh token 무효화 
-
-                user_id=token.payload["user_id"]
-                user=User.objects.get(id=user_id)
-                print("user: ", user)
-
-                new_token=RefreshToken.for_user(user)
-                print("new_token: ", new_token)
-                response = {
-                    "refresh": str(new_token),
-                    "access": str(new_token.access_token),
-                }
-                return Response(response, status=status.HTTP_200_OK)
-            except:
-                return Response({'error': 'Token not found.'}, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            return Response({'error': 'Refresh token is not provided.'}, status=status.HTTP_400_BAD_REQUEST)
-"""       
-
 
 class Register(APIView):
     
     def get(self, request):
-        return Response({"회원가입"}, status=status.HTTP_200_OK)
+        return Response({"회원가입: email, password, username을 입력해 주세요."}, status=status.HTTP_200_OK)
     
     #input data {"email":"moomoo@gmail.com", "username":"eungimoo", "password":"eungi"}
     def post(self, request, format=None):#privateUserSerializers
         password=request.data.get("password")
-        if not password:
+        username=request.data.get("username")
+        email=request.data.get("email")
+        if not password or not username or not email :
             raise ParseError
         serializer=RegisterSerializers(data=request.data)
         if serializer.is_valid():
@@ -159,8 +124,6 @@ class KakaoCallBack(APIView):
             
         except KeyError:
             return Response({"message": "INVALID_TOKEN"}, status=status.HTTP_400_BAD_REQUEST)
-        
-       
         
         if User.objects.filter(email=email).exists():
             kakao_user = User.objects.get(email=email)

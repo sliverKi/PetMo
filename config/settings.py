@@ -19,14 +19,14 @@ ALLOWED_HOSTS = ["*"]
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ORIGIN_ALLOW = True
+CORS_ALLOW_ALL_ORIGINS=True
 
-CORS_ALLOWED_ORIGINS = ["http://127.0.0.1:3000", 'http://localhost:3000']
-
-CSRF_TRUSTED_ORIGINS = ["http://127.0.0.1:3000","http://localhost:3000","http://127.0.0.1:8000","http://localhost:8000" ]
-
+CSRF_TRUSTED_ORIGINS = [
+    "http://127.0.0.1:3000",
+    "http://localhost:3000",
+    "http://127.0.0.1:8000",
+    "http://localhost:8000" ]
 # CORS_ORIGIN_WHITELIST = ['http://127.0.0.1:3000','http://localhost:3000']
-
-CORS_ALLOW_ALL_ORIGINS = True
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -37,14 +37,13 @@ CORS_ALLOW_ALL_ORIGINS = True
 DEBUG = True
 
 THIRD_PARTY_APPS=[
-    "drf_yasg",
     "rest_framework",
+    'rest_framework_simplejwt',
     "rest_framework.authtoken",
-    "rest_framework_simplejwt",
-    "rest_framework_simplejwt.token_blacklist",
-    "dj_rest_auth",
-    "dj_rest_auth.registration",
+    "drf_yasg",
     "corsheaders",
+    "django_seed",
+    "debug_toolbar",
 
 ]
 CUSTOM_APPS=[
@@ -86,6 +85,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -122,18 +122,16 @@ DATABASES = {
 REST_FRAMEWORK={
     # 'DEFAULT_PERMISSION_CLASSES': (#api 접근시에 인증된 유저(헤더에 access-tocken을 포함하여 유효한 유저만이 접근이 가능하게 함)
     #     'rest_framework.permissions.IsAuthenticated',
-    # ),
+    #  ),
     'DEFAULT_AUTHENTICATION_CLASSES':(
         # 'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
     'DEFAULT_PAGINATION_CLASS':
         'rest_framework.pagination.PageNumberPagination',
-        'PAGE_SIZE': 10,
+        'PAGE_SIZE': 10
 }
-
-
-
 
 
 # Password validation
@@ -171,6 +169,11 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'app', 'static')
+#debug-toolbar
+INTERNAL_IPS=[
+    '127.0.0.1',
+]
 
 MEDIA_ROOT = "uploads"
 

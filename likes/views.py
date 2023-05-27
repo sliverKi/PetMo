@@ -7,9 +7,13 @@ from posts.models import Post
 
 
 class PostLikes(APIView):    
-    def post(self, request, pk):
+      def post(self, request, pk):
         #input data: {"post":1}
-        post = get_object_or_404(Post, pk=pk)#pk에 해당하는 Post 객체를 가져옴. 
+        # post = get_object_or_404(Post, pk=pk)#pk에 해당하는 Post 객체를 가져옴. 
+        try:
+            post = Post.objects.get(pk=pk)
+        except Post.DoesNotExist:
+            return Response({"error":"해당 게시글이 존재하지 않습니다."}, status=status.HTTP_404_NOT_FOUND)
         like, created = PostLike.objects.get_or_create(
             user=request.user, 
             post=post
@@ -18,4 +22,3 @@ class PostLikes(APIView):
         #get_or_create:: 생성 여부를 boolean 으로 반환
         like.delete() if not created else None
         return Response({"created" if created else "deleted"}, status=status.HTTP_200_OK)
-
