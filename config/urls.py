@@ -16,7 +16,6 @@ from rest_framework import permissions
 #     ),
 #     public=True,
 #     permission_classes=[permissions.AllowAny],
-
 # )
 urlpatterns = [
     path('admin/', admin.site.urls),
